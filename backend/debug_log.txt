@@ -1,0 +1,21 @@
+ID: 695dc35915c28f286f4eddba
+Desc: KsMATA
+Amount: 945.0 (Type: <class 'float'>)
+Date: 2082-09-21 00:00:00 (Type: <class 'datetime.datetime'>)
+Category: Other
+--------------------
+ID: 695dc2c415c28f286f4eddb8
+Desc: KsMATA
+Amount: 945.0 (Type: <class 'float'>)
+Date: 2082-09-21 00:00:00 (Type: <class 'datetime.datetime'>)
+Category: Other
+--------------------
+ID: 695dc14108e26507b5c5e496
+Desc: Big Mart
+Amount: 180.0 (Type: <class 'float'>)
+Date: 2026-01-07 02:13:21.365000 (Type: <class 'datetime.datetime'>)
+Category: Shopping
+--------------------
+
+--- SUMMARY QUERY TEST (Jan 2026) ---
+Aggregation Result: [{'_id': 'Shopping', 'total': 180.0}]

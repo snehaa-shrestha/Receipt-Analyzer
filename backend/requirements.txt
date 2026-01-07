@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+motor
+pymongo
+python-multipart
+easyocr
+opencv-python
+pandas
+scikit-learn
+pyjwt
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+requests
+email-validator
+Pillow
