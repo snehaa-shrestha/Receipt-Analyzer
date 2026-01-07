@@ -5,7 +5,7 @@ import api from '../api/axios';
 import {
     TrendingUp, Wallet, ArrowUpRight, TrendingDown, AlertTriangle,
     FileText, Plus, Download, CreditCard, Calendar, ArrowRight,
-    PieChart as PieChartIcon, Activity, DollarSign
+    PieChart as PieChartIcon, Activity, DollarSign, Flame, Sparkles
 } from 'lucide-react';
 import {
     RadialBarChart, RadialBar, ResponsiveContainer, Tooltip as RechartsTooltip,
@@ -15,12 +15,20 @@ import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
     const { user, logout } = useAuth();
-    const [stats, setStats] = useState({ spent: 0, budget: 0, points: 0, forecast: 0 });
+    const [stats, setStats] = useState({ spent: 0, budget: 0, points: 0, forecast: 0, streak: 0 });
     const [budgets, setBudgets] = useState([]);
     const [chartData, setChartData] = useState([]);
     const [recentTx, setRecentTx] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showAIModal, setShowAIModal] = useState(false);
+    const [aiAdvice, setAiAdvice] = useState(null);
+    const [loadingAI, setLoadingAI] = useState(false);
+
+    // Month/Year selector state
+    const now = new Date();
+    const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1); // 1-12
 
     const currencySymbol = {
         'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'NPR': 'Rs'
@@ -28,14 +36,14 @@ export default function Dashboard() {
 
     const COLORS = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B'];
 
-    const fetchData = async () => {
+    const fetchData = async (year = selectedYear, month = selectedMonth) => {
         try {
             const [gameRes, budgetRes, expenseRes, forecastRes, summaryRes] = await Promise.all([
                 api.get('/game/progress'),
                 api.get('/budgets/status'),
-                api.get('/expenses/recent-transactions'),
+                api.get(`/expenses/recent-transactions?year=${year}&month=${month}`),
                 api.get('/expenses/forecast'),
-                api.get('/expenses/summary?period=month')
+                api.get(`/expenses/summary?period=month&year=${year}&month=${month}`)
             ]);
 
             const totalSpent = summaryRes.data.reduce((acc, curr) => acc + curr.total, 0);
@@ -47,7 +55,8 @@ export default function Dashboard() {
                 spent: totalSpent,
                 budget: totalLimit,
                 points: gameRes.data.points,
-                forecast: forecastRes.data.predicted_amount || 0
+                forecast: forecastRes.data.predicted_amount || 0,
+                streak: gameRes.data.streak_count || 0
             });
 
             setBudgets(budgetRes.data);
@@ -65,6 +74,11 @@ export default function Dashboard() {
     useEffect(() => {
         if (user) fetchData();
     }, [user, logout]);
+
+    // Refetch when month/year changes
+    useEffect(() => {
+        if (user) fetchData(selectedYear, selectedMonth);
+    }, [selectedYear, selectedMonth]);
 
     const handleExport = async () => {
         try {
@@ -89,6 +103,18 @@ export default function Dashboard() {
     const remaining = stats.budget - stats.spent;
     const progress = Math.min((stats.spent / (stats.budget || 1)) * 100, 100);
 
+    const handleAIAdvice = async () => {
+        setShowAIModal(true);
+        if (!aiAdvice) {
+            setLoadingAI(true);
+            try {
+                const res = await api.get('/ai/advice');
+                setAiAdvice(res.data);
+            } catch (e) { console.error(e); }
+            finally { setLoadingAI(false); }
+        }
+    };
+
     return (
         <Layout>
             <div className="max-w-7xl mx-auto space-y-8">
@@ -107,6 +133,10 @@ export default function Dashboard() {
                         <button onClick={handleExport} className="group bg-gray-900/50 hover:bg-gray-800 text-gray-300 border border-gray-700/50 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md">
                             <Download size={18} className="group-hover:-translate-y-0.5 transition-transform" />
                             <span>Export</span>
+                        </button>
+                        <button onClick={handleAIAdvice} className="group bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md">
+                            <Sparkles size={18} className="group-hover:scale-110 transition-transform" />
+                            <span>AI Insights</span>
                         </button>
                         <button onClick={() => setShowAddModal(true)} className="group bg-white hover:bg-gray-100 text-black px-5 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.15)]">
                             <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -138,6 +168,9 @@ export default function Dashboard() {
                                                 <Wallet size={16} /> Monthly Budget
                                             </p>
                                             <h2 className="text-5xl font-bold tracking-tight">{currencySymbol}{stats.budget.toLocaleString()}</h2>
+                                            <p className="text-indigo-300 text-sm mt-1 font-medium">
+                                                {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                            </p>
                                         </div>
                                         <div className="text-right">
                                             <p className={`font-medium mb-1 ${remaining < 0 ? 'text-red-200' : 'text-indigo-200'}`}>
@@ -160,6 +193,41 @@ export default function Dashboard() {
                                                 className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.3)] ${progress > 100 ? 'bg-red-400' : 'bg-white'}`}
                                                 style={{ width: `${progress}%` }}
                                             ></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Month/Year Selector */}
+                                    <div className="mt-6 pt-6 border-t border-white/20">
+                                        <p className="text-indigo-200 text-sm mb-3 font-medium">View by Month</p>
+                                        <div className="flex gap-3">
+                                            <select
+                                                value={selectedMonth}
+                                                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                                                className="flex-1 bg-white/10 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                                            >
+                                                <option value="1">January</option>
+                                                <option value="2">February</option>
+                                                <option value="3">March</option>
+                                                <option value="4">April</option>
+                                                <option value="5">May</option>
+                                                <option value="6">June</option>
+                                                <option value="7">July</option>
+                                                <option value="8">August</option>
+                                                <option value="9">September</option>
+                                                <option value="10">October</option>
+                                                <option value="11">November</option>
+                                                <option value="12">December</option>
+                                            </select>
+                                            <select
+                                                value={selectedYear}
+                                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                                className="bg-white/10 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                                            >
+                                                {[...Array(5)].map((_, i) => {
+                                                    const year = new Date().getFullYear() - i;
+                                                    return <option key={year} value={year}>{year}</option>;
+                                                })}
+                                            </select>
                                         </div>
                                     </div>
                                 </>
@@ -226,7 +294,7 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="block font-bold text-white text-lg">{currencySymbol}{tx.amount.toFixed(2)}</span>
+                                        <span className="block font-bold text-white text-lg">{currencySymbol}{(tx.amount || 0).toFixed(2)}</span>
                                         <span className="text-xs text-gray-500">{tx.receipt_id ? 'Receipt' : 'Manual'}</span>
                                     </div>
                                 </div>
@@ -312,7 +380,62 @@ export default function Dashboard() {
 
             {/* Add Expense Modal */}
             {showAddModal && <AddExpenseModal onClose={() => setShowAddModal(false)} refresh={fetchData} currencySymbol={currencySymbol} />}
+
+            {/* AI Advisor Modal */}
+            {showAIModal && (
+                <AIAdvisorModal
+                    onClose={() => setShowAIModal(false)}
+                    loading={loadingAI}
+                    advice={aiAdvice}
+                />
+            )}
         </Layout>
+    );
+}
+
+function AIAdvisorModal({ onClose, loading, advice }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-gray-900 w-full max-w-2xl rounded-3xl border border-gray-700 shadow-2xl p-8 scale-100 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
+                            <Sparkles size={24} />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white">AI Financial Advisor</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full transition text-gray-400">✕</button>
+                </div>
+
+                {loading ? (
+                    <div className="py-12 text-center space-y-4">
+                        <div className="animate-spin w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
+                        <p className="text-indigo-300 font-medium">Analyzing your finances...</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6 text-gray-300">
+                        {advice?.raw_advice ? (
+                            <div className="prose prose-invert max-w-none">
+                                <div className="whitespace-pre-wrap leading-relaxed">
+                                    {advice.raw_advice}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-gray-500 bg-gray-800/50 rounded-2xl">
+                                <p>No advice available. Try adding more expenses to get insights.</p>
+                            </div>
+                        )}
+
+                        {advice?.mock && (
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl text-sm flex items-start gap-3">
+                                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                                <span>Using mock data. Add OpenAI API Key to backend (.env) for real insights.</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
 

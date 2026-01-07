@@ -3,7 +3,7 @@ uvicorn
 motor
 pymongo
 python-multipart
-easyocr
+python-doctr[torch]
 opencv-python
 pandas
 scikit-learn
@@ -14,3 +14,4 @@ python-dotenv
 requests
 email-validator
 Pillow
+openai

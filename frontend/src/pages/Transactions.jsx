@@ -109,7 +109,7 @@ export default function Transactions() {
                                             {new Date(tx.date).toLocaleDateString()}
                                         </td>
                                         <td className="p-6 text-right font-bold text-white">
-                                            {currencySymbol}{tx.amount.toFixed(2)}
+                                            {currencySymbol}{(tx.amount || 0).toFixed(2)}
                                         </td>
                                         <td className="p-6 text-center">
                                             <button

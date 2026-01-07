@@ -2,7 +2,7 @@ from app.database import get_database
 from datetime import datetime, timedelta
 from bson import ObjectId
 
-async def update_streak(user_id: str):
+async def update_monthly_streak(user_id: str):
     db = get_database()
     try:
         user_oid = ObjectId(user_id)
@@ -13,24 +13,46 @@ async def update_streak(user_id: str):
     if not user:
         return
         
-    last_active = user.get("last_active_date")
+    last_active_str = user.get("last_active_month") # e.g. "2026-01"
     now = datetime.utcnow()
-    today = now.date()
+    current_month_str = now.strftime("%Y-%m")
     
-    if last_active:
-        last_date = last_active.date()
-        if today == last_date:
-            return # Already active today
-        elif today == last_date + timedelta(days=1):
-            # Streak continues
-            await db.users.update_one({"_id": user_oid}, {"$inc": {"streak_count": 1}, "$set": {"last_active_date": now}})
-        else:
-            # Streak broken
-            if today > last_date:
-                 await db.users.update_one({"_id": user_oid}, {"$set": {"streak_count": 1, "last_active_date": now}})
+    # Logic:
+    # If no last_active -> Set to current, streak = 1
+    # If last_active == current -> Do nothing
+    # If last_active == previous_month -> Streak + 1, Set last to current
+    # If last_active < previous_month -> Streak = 1, Set last to current
+    
+    if not last_active_str:
+        await db.users.update_one(
+            {"_id": user_oid}, 
+            {"$set": {"streak_count": 1, "last_active_month": current_month_str}}
+        )
+        return
+
+    if last_active_str == current_month_str:
+        return # Already active this month
+
+    # Parse dates to compare months
+    last_date = datetime.strptime(last_active_str, "%Y-%m")
+    # Previous month relative to now
+    first_of_current = datetime(now.year, now.month, 1)
+    # Check if last_date is the month immediately before current
+    # (previous month calculation)
+    expected_prev = (first_of_current - timedelta(days=1)).replace(day=1)
+    expected_prev_str = expected_prev.strftime("%Y-%m")
+
+    if last_active_str == expected_prev_str:
+        await db.users.update_one(
+            {"_id": user_oid}, 
+            {"$inc": {"streak_count": 1}, "$set": {"last_active_month": current_month_str}}
+        )
     else:
-        # First time
-        await db.users.update_one({"_id": user_oid}, {"$set": {"streak_count": 1, "last_active_date": now}})
+        # Streak broken
+        await db.users.update_one(
+            {"_id": user_oid}, 
+            {"$set": {"streak_count": 1, "last_active_month": current_month_str}}
+        )
 
 async def check_and_update_quests(user_id: str):
     db = get_database()

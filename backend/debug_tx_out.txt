@@ -1,0 +1,92 @@
+DEBUGGING SPECIFIC TRANSACTIONS
+============================================================
+
+Found: BHAT : [YYATEXI  SWTCR MARKET(NAXAL )
+  Amount: $4850.0
+  Date: 2026-01-07 02:46:02.018000 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695dc8ea57b2b4f7d8007f69
+
+Found: BHAT-BIKATENI  SUFER  MARKET (NAXAL )
+  Amount: $437006.0
+  Date: 2001-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e09a9a185d02e8e1e06e8
+
+Found: BHAT-BIKATENI  SUFER  MARKET (NAXAL )
+  Amount: $70741.0
+  Date: 2001-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e0b8471f5f62cecf6d628
+
+Found: BHAT-BIKATENI  SUFER  MARKET (NAXAL )
+  Amount: $70741.0
+  Date: 2001-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e0f0e71f5f62cecf6d62a
+
+Found: BHAT-BIKATENI  SUFER  MARKET (NAXAL )
+  Amount: $70741.0
+  Date: 2001-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e1fda1b5dd026676af28b
+
+Found: BHAT : [YYATEXI  SWTCR MARKET(NAXAL )
+  Amount: $4850.0
+  Date: 2023-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e295d14868974ab8a7b1b
+
+Found: BHAT : [YYATEXI  SWTCR MARKET(NAXAL )
+  Amount: $4850.0
+  Date: 2023-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e29b914868974ab8a7b1d
+
+Found: BHAT: MYYATEHI   SWTCR HARKET/NAXAL )
+  Amount: $4850.0
+  Date: 2026-12-15 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e2a9b3d9e730a833b2734
+
+Found: BHAT- BHATENI SUPER MARKETINAXAL)
+  Amount: $4370.0
+  Date: 2024-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e4a1be75987a4505057de
+
+Found: BHAT- BHATENI SUPER MARKETINAXAL)
+  Amount: $4370.0
+  Date: 2024-07-13 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e4f5593085ca46ba08262
+
+Found: Hankook Saralg
+  Amount: $2810.0
+  Date: 2025-08-26 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e289414868974ab8a7b19
+
+Found: Hankook Saralig
+  Amount: $2810.0
+  Date: 2026-01-21 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e2cc6d0bcd67834a9605a
+
+Found: Hankook Saralig
+  Amount: $2810.0
+  Date: 2026-01-21 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e2d2cd0bcd67834a9605c
+
+Found: om pw
+  Amount: $85.0
+  Date: 2026-01-15 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e2e301a4e0041f1a1b15e
+
+Found: KSti'MATE'
+  Amount: $945.0
+  Date: 2026-01-14 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e311d684ba0fcb65e0cd0
+
+Found: KSti'MATE'
+  Amount: $945.0
+  Date: 2026-01-14 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e32ce04a949576b4c1c6c
+
+Found: KSti'MATE'
+  Amount: $945.0
+  Date: 2025-09-21 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e35235494c07b42484a46
+
+Found: KSti'MATE'
+  Amount: $945.0
+  Date: 2025-09-21 00:00:00 (Type: <class 'datetime.datetime'>)
+  Receipt ID: 695e3897fa18a51888a3c5f4

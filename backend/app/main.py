@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, receipts, expenses, game, budgets
+from app.routers import auth, receipts, expenses, game, budgets, ai
 from app.database import check_db_connection
 import logging
 
@@ -13,7 +13,8 @@ app = FastAPI(title="Smart Receipt Analyzer API")
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting up...")
+    import sys
+    logger.info(f"Starting up with Python: {sys.executable}")
     await check_db_connection()
 
 app.add_middleware(
@@ -32,6 +33,7 @@ app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
 app.include_router(expenses.router, prefix="/api/expenses", tags=["expenses"])
 app.include_router(game.router, prefix="/api/game", tags=["game"])
 app.include_router(budgets.router, prefix="/api/budgets", tags=["budgets"])
+app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 # Import users router inside main to avoid circular imports if any, or just import at top
 from app.routers import users
 app.include_router(users.router, prefix="/api/users", tags=["users"])

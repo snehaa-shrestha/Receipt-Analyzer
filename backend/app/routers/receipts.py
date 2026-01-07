@@ -3,8 +3,9 @@ from typing import List, Optional
 from app.utils.security import verify_password, ALGORITHM, SECRET_KEY
 from app.database import get_database
 from app.models.receipt import ReceiptSchema
-from app.services.ocr_service import extract_text, parse_receipt
-from app.services.ml_service import classify_text
+from app.services.ocr_service import extract_text
+from app.services.game_service import update_monthly_streak
+
 from datetime import datetime
 import shutil
 import os
@@ -39,18 +40,32 @@ async def upload_receipt(
         # Read file for OCR
         with open(filepath, "rb") as f:
             file_bytes = f.read()
+        
+        from app.services.ocr_service import log_to_file
+        log_to_file(f"Starting OCR for file: {filename}")
             
         # Run OCR
-        text = extract_text(file_bytes)
-        parsed_data = parse_receipt(text)
+        # extract_text now returns a structured dict result directly (ReceiptAnalyzer integration)
+        parsed_data = extract_text(file_bytes)
+        log_to_file(f"OCR completed. Merchant: {parsed_data.get('merchant_name')}")
+        
+        # Categorize Merchant
+        merchant = parsed_data.get("merchant_name", "Unknown") or "Unknown"
+        detected_category = "Shopping"
+        
+        # Simple Keyword Categorization
+        m_lower = merchant.lower()
+        if any(k in m_lower for k in ['food', 'kitchen', 'restaurant', 'cafe', 'bhat', 'pizza']): detected_category = "Food"
+        elif any(k in m_lower for k in ['mart', 'store', 'market', 'grocery', 'kirana']): detected_category = "Groceries"
+        elif any(k in m_lower for k in ['fuel', 'petrol', 'taxi', 'ride']): detected_category = "Transport"
         
         # Enrich items with categories (Prioritize Manual Category if set)
         enriched_items = []
         for item in parsed_data.get("items", []):
-            category = manual_category if manual_category else classify_text(item["description"])
+            category = manual_category if manual_category else detected_category
             enriched_items.append({
-                "description": item["description"],
-                "amount": item["amount"],
+                "description": item["item_name"], # Note: ReceiptAnalyzer uses 'item_name'
+                "amount": item["price"],          # Note: ReceiptAnalyzer uses 'price'
                 "quantity": 1.0,
                 "category": category
             })
@@ -74,17 +89,17 @@ async def upload_receipt(
             "user_id": current_user["user_id"],
             "image_url": filepath, # In prod, return a static URL
             "uploaded_at": datetime.utcnow(),
-            "merchant_name": parsed_data["merchant_name"],
-            "total_amount": parsed_data["total_amount"],
+            "merchant_name": parsed_data.get("merchant_name", "Unknown"),
+            "total_amount": parsed_data.get("total_amount", 0.0),
             "date_extracted": final_date,
-            "raw_text": text,
+            "raw_text": parsed_data.get("raw_text", ""),
             "items": enriched_items
         }
         
         db = get_database()
         new_receipt = await db.receipts.insert_one(receipt_data)
         receipt_id = str(new_receipt.inserted_id)
-
+ 
         # 2. Insert individual items as Expenses for Analytics
         expense_docs = []
         for item in enriched_items:
@@ -103,13 +118,12 @@ async def upload_receipt(
         elif receipt_data["total_amount"] > 0:
             # Fallback: If no items parsed but we have a total, create a single expense
             merchant_name = parsed_data.get("merchant_name", "Receipt Total")
-            cat = manual_category if manual_category else classify_text(merchant_name)
             
             await db.expenses.insert_one({
                 "user_id": current_user["user_id"],
                 "description": merchant_name,
                 "amount": receipt_data["total_amount"],
-                "category": cat,
+                "category": manual_category or detected_category,
                 "date": final_date,
                 "receipt_id": receipt_id,
                 "created_at": datetime.utcnow()
@@ -118,6 +132,10 @@ async def upload_receipt(
         # Update parsed_data with the final decided values so frontend sees them
         parsed_data["date_extracted"] = final_date
         parsed_data["merchant_name"] = parsed_data.get("merchant_name") # Keep as is
+        
+        # Update Streak (Monthly)
+        await update_monthly_streak(current_user["user_id"])
+        
         
         return {
             "message": "Receipt uploaded and processed", 

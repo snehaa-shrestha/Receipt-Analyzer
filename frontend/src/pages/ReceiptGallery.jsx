@@ -114,7 +114,7 @@ export default function ReceiptGallery() {
                                 <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
                                     <span className="text-white font-bold text-lg drop-shadow-md">{receipt.merchant_name}</span>
                                     <span className="text-green-400 font-mono font-bold bg-green-900/80 px-2 py-1 rounded backdrop-blur-sm">
-                                        {currencySymbol}{receipt.total_amount.toFixed(2)}
+                                        {currencySymbol}{(receipt.total_amount || 0).toFixed(2)}
                                     </span>
                                 </div>
                             </div>

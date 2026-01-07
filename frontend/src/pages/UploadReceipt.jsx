@@ -9,7 +9,7 @@ export default function UploadReceipt() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
-    const [manualDate, setManualDate] = useState('');
+
     const [manualCategory, setManualCategory] = useState('');
 
     const CATEGORIES = ["Food", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];

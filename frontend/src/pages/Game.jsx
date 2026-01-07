@@ -69,10 +69,11 @@ export default function Game() {
                                 <Flame size={32} />
                             </div>
                             <div>
-                                <p className="text-gray-400 text-sm">Daily Streak</p>
-                                <h3 className="text-2xl font-bold text-white">{progress.streak_count} Days</h3>
+                                <p className="text-gray-400 text-sm">Monthly Streak</p>
+                                <h3 className="text-2xl font-bold text-white">{progress.streak_count} Months</h3>
                             </div>
                         </div>
+
                         <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
                             <div className="p-4 bg-yellow-500/20 rounded-xl text-yellow-500">
                                 <Star size={32} />
@@ -97,9 +98,9 @@ export default function Game() {
                                 completed={progress.points >= 50}
                             />
                             <QuestItem
-                                title="7 Day Streak"
+                                title="3 Month Streak"
                                 xp={200}
-                                completed={progress.streak_count >= 7}
+                                completed={progress.streak_count >= 3}
                             />
                             <QuestItem
                                 title="Stay Under Budget"

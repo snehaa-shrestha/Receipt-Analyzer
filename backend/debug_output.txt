@@ -1,0 +1,191 @@
+================================================================================
+DEBUGGING EXPENSE CALCULATIONS
+================================================================================
+
+Total Users: 5
+
+================================================================================
+USER: snaaa (ID: 695b66e2958eaabd6b7e27bf)
+Monthly Budget: 0
+================================================================================
+
+Total Receipts: 0
+
+Total from Receipts Table: $0.00
+
+Total Expense Records: 0
+  - Manual Expenses Total: $0.00
+  - Receipt Items Total: $0.00
+  - COMBINED Total: $0.00
+
+Sample Expenses (first 10):
+
+Checking for anomalies...
+  ✓ No anomalously large expenses found
+
+Category Breakdown:
+
+================================================================================
+USER: user (ID: 695b6741958eaabd6b7e27c0)
+Monthly Budget: 800.0
+================================================================================
+
+Total Receipts: 2
+  - Big Mart: $180.00 (Date: 2026-01-07 02:13:21.365000)
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 (Date: 2026-01-07 02:46:02.018000)
+
+Total from Receipts Table: $5,030.00
+
+Total Expense Records: 2
+  - Manual Expenses Total: $0.00
+  - Receipt Items Total: $5,030.00
+  - COMBINED Total: $5,030.00
+
+Sample Expenses (first 10):
+  - Big Mart: $180.00 [Category: Shopping] [Receipt ID: 695dc14108e26507b5c5e495]
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 [Category: Shopping] [Receipt ID: 695dc8ea57b2b4f7d8007f69]
+
+Checking for anomalies...
+  ✓ No anomalously large expenses found
+
+Category Breakdown:
+  - Shopping: $5,030.00 (2 items)
+
+================================================================================
+USER: sneha (ID: 695ccacf0519e9eedbaf7d88)
+Monthly Budget: 6000.0
+================================================================================
+
+Total Receipts: 12
+  - BHAT : NHATEHI  Swrcr MARET(NAXAL ): $4,850.00 (Date: 2026-01-06 17:59:33.585000)
+  - KsTMATT: $945.00 (Date: 2026-01-06 18:00:17.396000)
+  - DIG  MART: $180.00 (Date: 2026-01-06 18:06:35.315000)
+  - Big Mart: $180.00 (Date: 2026-01-07 07:16:12.090000)
+  - KSTMATE': $945.00 (Date: 2026-01-07 07:20:17.899000)
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $437,006.00 (Date: 2001-07-13 00:00:00)
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 (Date: 2001-07-13 00:00:00)
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 (Date: 2001-07-13 00:00:00)
+  - KSTMATE': $70,741.00 (Date: 2026-01-07 08:23:01.678000)
+  - Big Mart: $70,741.00 (Date: 2026-01-07 08:46:55.355000)
+  - Big Mart: $70,741.00 (Date: 2026-01-07 08:49:51.486000)
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 (Date: 2001-07-13 00:00:00)
+
+Total from Receipts Table: $868,552.00
+
+Total Expense Records: 9
+  - Manual Expenses Total: $0.00
+  - Receipt Items Total: $862,577.00
+  - COMBINED Total: $862,577.00
+
+Sample Expenses (first 10):
+  - Big Mart: $180.00 [Category: Shopping] [Receipt ID: 695e083c82c3fd653c5e8a31]
+  - KSTMATE': $945.00 [Category: Other] [Receipt ID: 695e0931a185d02e8e1e06e6]
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $437,006.00 [Category: Shopping] [Receipt ID: 695e09a9a185d02e8e1e06e8]
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 [Category: Shopping] [Receipt ID: 695e0b8471f5f62cecf6d628]
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 [Category: Shopping] [Receipt ID: 695e0f0e71f5f62cecf6d62a]
+  - KSTMATE': $70,741.00 [Category: Other] [Receipt ID: 695e17e5c232370903babd03]
+  - Big Mart: $70,741.00 [Category: Shopping] [Receipt ID: 695e1d7f1b5dd026676af287]
+  - Big Mart: $70,741.00 [Category: Food] [Receipt ID: 695e1e2f1b5dd026676af289]
+  - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $70,741.00 [Category: Food] [Receipt ID: 695e1fda1b5dd026676af28b]
+
+Checking for anomalies...
+  ⚠️  Found 1 expenses over $100,000:
+    - BHAT-BIKATENI  SUFER  MARKET (NAXAL ): $437,006.00
+
+Category Breakdown:
+  - Food: $141,482.00 (2 items)
+  - Shopping: $649,409.00 (5 items)
+  - Other: $71,686.00 (2 items)
+
+================================================================================
+USER: snehas (ID: 695dcc2557b2b4f7d8007f6b)
+Monthly Budget: 2000.0
+================================================================================
+
+Total Receipts: 3
+  - Big Mart: $180.00 (Date: 2026-01-07 03:17:18.824000)
+  - Amins;Jr_ enupj: $162,501.00 (Date: 2026-01-07 03:21:54.942000)
+  - KsMATA: $945.00 (Date: 2026-01-07 03:23:56.992000)
+
+Total from Receipts Table: $163,626.00
+
+Total Expense Records: 3
+  - Manual Expenses Total: $0.00
+  - Receipt Items Total: $163,626.00
+  - COMBINED Total: $163,626.00
+
+Sample Expenses (first 10):
+  - Big Mart: $180.00 [Category: Shopping] [Receipt ID: 695dd03e57b2b4f7d8007f6e]
+  - Amins;Jr_ enupj: $162,501.00 [Category: Other] [Receipt ID: 695dd15257b2b4f7d8007f70]
+  - KsMATA: $945.00 [Category: Other] [Receipt ID: 695dd1cd57b2b4f7d8007f72]
+
+Checking for anomalies...
+  ⚠️  Found 1 expenses over $100,000:
+    - Amins;Jr_ enupj: $162,501.00
+
+Category Breakdown:
+  - Shopping: $180.00 (1 items)
+  - Other: $163,446.00 (2 items)
+
+================================================================================
+USER: ram (ID: 695e208516e1e36e5d6710ce)
+Monthly Budget: 2000.0
+================================================================================
+
+Total Receipts: 28
+  - Big Mart: $180.00 (Date: 2026-01-07 09:00:45.530000)
+  - KsMATA: $945.00 (Date: 2026-01-07 09:01:29.345000)
+  - Hankook Saralg: $2,810.00 (Date: 2025-08-26 00:00:00)
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 (Date: 2023-07-13 00:00:00)
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 (Date: 2023-07-13 00:00:00)
+  - BHAT: MYYATEHI   SWTCR HARKET/NAXAL ): $4,850.00 (Date: 2026-12-15 00:00:00)
+  - Hankook Saralig: $2,810.00 (Date: 2026-01-21 00:00:00)
+  - Hankook Saralig: $2,810.00 (Date: 2026-01-21 00:00:00)
+  - om pw: $85.00 (Date: 2026-01-15 00:00:00)
+  - BE d1 2: $220.00 (Date: 2026-01-13 00:00:00)
+  - KSti'MATE': $945.00 (Date: 2026-01-14 00:00:00)
+  - KSti'MATE': $945.00 (Date: 2026-01-14 00:00:00)
+  - KSti'MATE': $945.00 (Date: 2025-09-21 00:00:00)
+  - KSti'MATE': $945.00 (Date: 2025-09-21 00:00:00)
+  - Invoice Nc.22873: $945.06 (Date: 2026-01-07 10:57:11.608000)
+  - KSMAI: $945.00 (Date: 2025-09-02 00:00:00)
+  - KSMAI: $945.00 (Date: 2025-09-02 00:00:00)
+  - cheli bhansa ghar: $945.00 (Date: 2025-09-21 00:00:00)
+  - Unknown: $0.00 (Date: 2026-01-07 11:48:56.314000)
+  - Unknown: $0.00 (Date: 2026-01-07 11:49:17.310000)
+  - cheli bhansa ghar: $945.00 (Date: 2025-09-21 00:00:00)
+  - Unknown: $0.00 (Date: 2026-01-07 11:50:18.058000)
+  - cheli bhansa ghar: $945.00 (Date: 2025-09-21 00:00:00)
+  - Korean Restaurant: $2,810.00 (Date: 2025-08-26 00:00:00)
+  - BHAT- BHATENI SUPER MARKETINAXAL): $4,370.00 (Date: 2024-07-13 00:00:00)
+  - cheli bhansa ghar: $945.00 (Date: 2025-09-21 00:00:00)
+  - BHAT- BHATENI SUPER MARKETINAXAL): $4,370.00 (Date: 2024-07-13 00:00:00)
+  - BIG MART: $180.00 (Date: 2026-01-07 12:20:00.815000)
+
+Total from Receipts Table: $46,535.06
+
+Total Expense Records: 35
+  - Manual Expenses Total: $0.00
+  - Receipt Items Total: $45,203.06
+  - COMBINED Total: $45,203.06
+
+Sample Expenses (first 10):
+  - Big Mart: $180.00 [Category: Shopping] [Receipt ID: 695e20bd16e1e36e5d6710cf]
+  - KsMATA: $945.00 [Category: Other] [Receipt ID: 695e20e916e1e36e5d6710d1]
+  - Hankook Saralg: $2,810.00 [Category: Food] [Receipt ID: 695e289414868974ab8a7b19]
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 [Category: Shopping] [Receipt ID: 695e295d14868974ab8a7b1b]
+  - BHAT : [YYATEXI  SWTCR MARKET(NAXAL ): $4,850.00 [Category: Shopping] [Receipt ID: 695e29b914868974ab8a7b1d]
+  - BHAT: MYYATEHI   SWTCR HARKET/NAXAL ): $4,850.00 [Category: Food] [Receipt ID: 695e2a9b3d9e730a833b2734]
+  - Hankook Saralig: $2,810.00 [Category: Food] [Receipt ID: 695e2cc6d0bcd67834a9605a]
+  - Hankook Saralig: $2,810.00 [Category: Food] [Receipt ID: 695e2d2cd0bcd67834a9605c]
+  - om pw: $85.00 [Category: Shopping] [Receipt ID: 695e2e301a4e0041f1a1b15e]
+  - BE d1 2: $220.00 [Category: Shopping] [Receipt ID: 695e2fa87d33f5b5b2e69661]
+
+Checking for anomalies...
+  ✓ No anomalously large expenses found
+
+Category Breakdown:
+  - Other: $945.00 (1 items)
+  - Shopping: $20,861.04 (13 items)
+  - Food: $22,452.02 (20 items)
+  - Transport: $945.00 (1 items)
