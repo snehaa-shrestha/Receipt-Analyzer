@@ -229,20 +229,37 @@ class ReceiptAnalyzer:
         amount_pattern = self._get_amount_pattern()
         all_candidates = []
 
+        # Strategy 1: Look for "Total" keywords near numbers (Standard)
         for text in reversed(text_blocks):
             if any(i in text.lower() for i in total_indicators):
                 for match in re.finditer(amount_pattern, text):
                     val = self._clean_numeric_value(match.group(2))
                     if val > 0: all_candidates.append((val, match.group(1) or detected_currency, 1.0))
 
+        # Strategy 2: If no keyword found, look for ANY isolated number in bottom 50% of text
+        # (Handwritten receipts often just write the number at the bottom)
         if not all_candidates:
-            for text in text_blocks[int(len(text_blocks)*0.6):]:
+            bottom_half = text_blocks[int(len(text_blocks)*0.5):]
+            for text in bottom_half:
+                # Check for isolated numbers or numbers with currency
                 for match in re.finditer(amount_pattern, text):
                     val = self._clean_numeric_value(match.group(2))
-                    if val > 0: all_candidates.append((val, match.group(1) or detected_currency, 0.7))
+                    if val > 0 and val < 100000: # Sanity check
+                        # Higher confidence if currency symbol is present
+                        confidence = 0.8 if match.group(1) else 0.6
+                        all_candidates.append((val, match.group(1) or detected_currency, confidence))
 
+        # Strategy 3: Select best candidate (Largest amount usually = Total)
         if all_candidates:
+            # Sort by Confidence (desc), then Value (desc)
+            # We prefer high confidence, but if confidence is same, take the largest value (assumed to be total)
             all_candidates.sort(key=lambda x: (x[2], x[0]), reverse=True)
+            
+            # Additional Heuristic: If we have multiple low-confidence numbers, pick the largest one
+            # as it's likely the sum of others.
+            if all_candidates[0][2] < 0.9:
+                 all_candidates.sort(key=lambda x: x[0], reverse=True)
+
             amounts['amount'], amounts['currency'] = str(all_candidates[0][0]), all_candidates[0][1]
             
         return amounts
@@ -251,6 +268,7 @@ class ReceiptAnalyzer:
         s = s.upper().replace('O', '0').replace('D', '0').replace('Q', '0').replace('G', '9')
         s = s.replace('S', '5').replace('Z', '2').replace('T', '7').replace('B', '8')
         s = s.replace('I', '1').replace('L', '1').replace('|', '1')
+        s = s.replace('/-', '').replace('/=', '') # Remove common handwriting suffixes
         s = s.replace(',', '.')
         digits_only = "".join([c for c in s if c.isdigit() or c == '.'])
         
@@ -365,7 +383,10 @@ class ReceiptAnalyzer:
         return re.sub(r'[^\w\s]', '', re.sub(r'\s+', ' ', text.lower().strip()))
 
     def _get_amount_pattern(self) -> str:
-        return fr'({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+[.,]\d{{2}})'
+        # Relaxed pattern: Matches currency (optional), then digits, optionally followed by . or , and more digits
+        # Also supports "180/-" style common in handwriting
+        # \d+(?:[.,]\d+)? matches "180", "180.00", "180.5"
+        return fr'({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+(?:[.,]\d+)?(?:/-)?)'
 
 
 # Initialize global analyzer

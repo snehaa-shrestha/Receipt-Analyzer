@@ -89,7 +89,7 @@ async def upload_receipt(
             "image_url": filepath, # In prod, return a static URL
             "uploaded_at": datetime.utcnow(),
             "merchant_name": parsed_data.get("merchant_name", "Unknown"),
-            "total_amount": parsed_data.get("total_amount", 0.0),
+            "total_amount": parsed_data.get("total_amount") or 0.0,
             "date_extracted": final_date,
             "raw_text": parsed_data.get("raw_text", ""),
             "items": enriched_items

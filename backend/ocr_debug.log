@@ -42,3 +42,26 @@
 2026-01-08 13:58:30.096196 - OCR completed. Merchant: TAX INVOICE
 2026-01-08 13:58:53.520812 - Starting OCR for file: 79f2b95b-3491-4360-9ebe-e00297ea9bcf.jpg
 2026-01-08 13:58:59.786747 - OCR completed. Merchant: cheli bhansa ghar
+2026-01-08 14:09:33.522343 - Starting OCR for file: d25384d7-5c9d-4e9d-8bfa-52622b16802c.jpg
+2026-01-08 14:09:44.026445 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 14:12:10.327886 - Starting OCR for file: c3b5159b-1c1d-4a5d-8ad0-e151794034f7.jpg
+2026-01-08 14:12:10.644439 - Starting model initialization...
+2026-01-08 14:12:16.745430 - Model initialization successful!
+2026-01-08 14:12:25.496151 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 14:14:20.011335 - Starting OCR for file: 2ff797e9-292c-4450-8a26-84607539afc8.jpg
+2026-01-08 14:14:20.547340 - Starting model initialization...
+2026-01-08 14:14:25.541894 - Model initialization successful!
+2026-01-08 14:14:33.487613 - WARNING: Extracted amount $162,501.00 exceeds maximum. Capping at $100,000.00
+2026-01-08 14:14:33.987225 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 14:50:19.519967 - Starting OCR for file: 64d42c9e-cf0a-4472-a649-82840d36bf65.jpg
+2026-01-08 14:50:32.234853 - WARNING: Extracted amount $162,501.00 exceeds maximum. Capping at $100,000.00
+2026-01-08 14:50:32.239724 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 14:52:41.332097 - Starting OCR for file: e27e0d34-88cf-4b31-bc40-f9ee6c2afe76.jpg
+2026-01-08 14:52:41.590048 - Starting model initialization...
+2026-01-08 14:52:46.809814 - Model initialization successful!
+2026-01-08 14:52:54.855707 - WARNING: Extracted amount $162,501.00 exceeds maximum. Capping at $100,000.00
+2026-01-08 14:52:54.858911 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 15:03:01.135964 - Starting OCR for file: 876f3850-f42a-46f5-941d-270d6f8c7d73.jpg
+2026-01-08 15:03:10.366171 - OCR completed. Merchant: BIG MART
+2026-01-08 15:13:44.459542 - Starting OCR for file: ff38547c-5128-4778-bdbd-ecd0af6afb98.jpg
+2026-01-08 15:14:02.090064 - OCR completed. Merchant: BIG MART
