@@ -9,6 +9,7 @@ export default function Analytics() {
     const { user } = useAuth();
     const [summary, setSummary] = useState([]);
     const [forecast, setForecast] = useState(null);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [dailyData, setDailyData] = useState([]);
     const [period, setPeriod] = useState('all'); // all, year, month
 
@@ -32,12 +33,8 @@ export default function Analytics() {
                 setForecast(forecastRes.data);
 
                 // 3. Daily Trend Data (Bar Chart)
-                const expensesRes = await api.get('/expenses/');
-                const now = new Date();
-
-                // Filter based on period if needed manually, but backend summary handles categories.
-                // For trend, let's show last 30 days or based on period.
-                // Let's just group ALL returned expenses (which are top 100 recent) by date.
+                // Pass selectedYear to fetch data for that specific year
+                const expensesRes = await api.get(`/expenses/?year=${selectedYear}`);
 
                 const grouped = {};
                 expensesRes.data.forEach(ex => {
@@ -50,17 +47,16 @@ export default function Analytics() {
                 });
 
                 const chartData = Object.keys(grouped).map(date => ({ date, amount: grouped[date] }));
-                // Sort by date roughly? The keys insertion order isn't guaranteed, but usually okay for recent. 
-                // Better to sort by timestamp but we lost it. 
-                // Let's rely on the fact expensesRes returns sorted by date desc. 
+                // Sort roughly by date (converting string back to date object for sorting)
+                chartData.sort((a, b) => new Date(a.date + ` ${selectedYear}`) - new Date(b.date + ` ${selectedYear}`));
 
-                setDailyData(chartData.reverse()); // Reverse to show oldest to newest
+                setDailyData(chartData);
 
             } catch (e) { console.error("Analytics fetch error", e); }
         };
 
         fetchData();
-    }, [period]);
+    }, [period, selectedYear]);
 
     const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -94,9 +90,22 @@ export default function Analytics() {
 
                 {/* Spending Trend Chart (2 cols) */}
                 <div className="lg:col-span-2 bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg">
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <Activity size={20} className="text-blue-400" /> Daily Spending Trend
-                    </h3>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Activity size={20} className="text-blue-400" /> Daily Spending Trend
+                        </h3>
+                        <div className="flex bg-gray-900 rounded-lg p-1 gap-1">
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                className="bg-transparent text-gray-400 text-sm font-medium focus:outline-none p-1"
+                            >
+                                {[2024, 2025, 2026, 2027].map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                     <div className="h-64">
                         {dailyData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">

@@ -21,29 +21,59 @@ async def create_expense(expense: ExpenseSchema, current_user: dict = Depends(ge
     return {"message": "Expense added", "id": str(new_expense.inserted_id)}
 
 @router.get("/")
-async def get_expenses(current_user: dict = Depends(get_current_user)):
+async def get_expenses(
+    current_user: dict = Depends(get_current_user),
+    year: Optional[int] = None,
+    month: Optional[int] = None
+):
     """
-    Returns ALL transactions (Merged Receipts + Manual Expenses)
+    Returns transactions (Merged Receipts + Manual Expenses).
+    If year/month provided, returns ALL matching records.
+    If no filter, returns recent 100.
     """
     user_id = current_user["user_id"]
     db = get_database()
     
+    # Date Filtering
+    date_query = {}
+    limit = 100 # default limit for recent
+    
+    if year:
+        limit = 0 # no limit if filtering
+        start_date = datetime(year, month if month else 1, 1)
+        if month:
+            if month == 12: end_date = datetime(year + 1, 1, 1)
+            else: end_date = datetime(year, month + 1, 1)
+        else:
+            end_date = datetime(year + 1, 1, 1)
+        date_query = {"$gte": start_date, "$lt": end_date}
+    
     # 1. Fetch Receipts
-    receipts = await db.receipts.find({"user_id": user_id}).sort("date_extracted", -1).to_list(length=100)
+    receipt_match = {"user_id": user_id}
+    if date_query: receipt_match["date_extracted"] = date_query
+    
+    r_cursor = db.receipts.find(receipt_match).sort("date_extracted", -1)
+    if limit > 0: r_cursor = r_cursor.limit(limit)
+    receipts = await r_cursor.to_list(length=None) # length=None is safe here as mongo driver handles it, or pass 10000
     
     # 2. Fetch Manual Expenses
-    manual_expenses = await db.expenses.find({"user_id": user_id, "receipt_id": None}).sort("date", -1).to_list(length=100)
+    expense_match = {"user_id": user_id, "receipt_id": None}
+    if date_query: expense_match["date"] = date_query
+    
+    e_cursor = db.expenses.find(expense_match).sort("date", -1)
+    if limit > 0: e_cursor = e_cursor.limit(limit)
+    manual_expenses = await e_cursor.to_list(length=None)
     
     combined = []
     
     for r in receipts:
         combined.append({
-            "_id": str(r["_id"]), # Match frontend expectation
+            "_id": str(r["_id"]),
             "type": "receipt",
             "description": r.get("merchant_name", "Unknown Merchant"),
             "amount": r.get("total_amount", 0.0),
             "date": r.get("date_extracted") or r.get("uploaded_at"),
-            "category": "Receipt", # Receipts might not have a single category, defaulting
+            "category": "Receipt", 
             "receipt_id": str(r["_id"])
         })
         
@@ -58,10 +88,13 @@ async def get_expenses(current_user: dict = Depends(get_current_user)):
             "receipt_id": None
         })
         
-    # Sort by date desc
+    # Sort by date
     combined.sort(key=lambda x: x["date"] if x["date"] else datetime.min, reverse=True)
-    # Filter out transactions with null or zero amounts
-    combined = [tx for tx in combined if tx.get("amount") and tx.get("amount") > 0]
+    
+    # If no filter was applied, maybe we still want to limit total combined?
+    if limit > 0:
+        combined = combined[:limit]
+        
     return combined
 
 @router.get("/recent-transactions")
