@@ -22,8 +22,6 @@ export default function Dashboard() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showAIModal, setShowAIModal] = useState(false);
-    const [aiAdvice, setAiAdvice] = useState(null);
-    const [loadingAI, setLoadingAI] = useState(false);
 
     // Month/Year selector state
     const now = new Date();
@@ -103,16 +101,8 @@ export default function Dashboard() {
     const remaining = stats.budget - stats.spent;
     const progress = Math.min((stats.spent / (stats.budget || 1)) * 100, 100);
 
-    const handleAIAdvice = async () => {
+    const handleAIAdvice = () => {
         setShowAIModal(true);
-        if (!aiAdvice) {
-            setLoadingAI(true);
-            try {
-                const res = await api.get('/ai/advice');
-                setAiAdvice(res.data);
-            } catch (e) { console.error(e); }
-            finally { setLoadingAI(false); }
-        }
     };
 
     return (
@@ -385,57 +375,112 @@ export default function Dashboard() {
             {showAIModal && (
                 <AIAdvisorModal
                     onClose={() => setShowAIModal(false)}
-                    loading={loadingAI}
-                    advice={aiAdvice}
+                    year={selectedYear}
+                    setYear={setSelectedYear}
+                    month={selectedMonth}
+                    setMonth={setSelectedMonth}
                 />
             )}
         </Layout>
     );
 }
 
-function AIAdvisorModal({ onClose, loading, advice }) {
+function AIAdvisorModal({ onClose, year, setYear, month, setMonth }) {
+    const [loading, setLoading] = useState(false);
+    const [advice, setAdvice] = useState(null);
+
+    useEffect(() => {
+        const fetchAdvice = async () => {
+            setLoading(true);
+            setAdvice(null);
+            try {
+                const res = await api.get(`/ai/advice?year=${year}&month=${month}`);
+                setAdvice(res.data);
+            } catch (e) {
+                console.error(e);
+                setAdvice({ raw_advice: "Failed to load advice. Please try again." });
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAdvice();
+    }, [year, month]);
+
+    const periodName = `${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-gray-900 w-full max-w-2xl rounded-3xl border border-gray-700 shadow-2xl p-8 scale-100 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                <div className="flex justify-between items-center mb-6">
+            <div className="bg-gray-900 w-full max-w-2xl rounded-3xl border border-gray-700 shadow-2xl p-8 scale-100 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
                             <Sparkles size={24} />
                         </div>
-                        <h2 className="text-2xl font-bold text-white">AI Financial Advisor</h2>
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">AI Financial Advisor</h2>
+                            {/* Interactive Date Selectors */}
+                            <div className="flex items-center gap-2 mt-1">
+                                <select
+                                    value={month}
+                                    onChange={(e) => setMonth(parseInt(e.target.value))}
+                                    className="bg-gray-800 text-indigo-400 text-sm font-medium border-none rounded focus:ring-0 cursor-pointer py-0 pl-0 pr-6"
+                                >
+                                    {[...Array(12)].map((_, i) => (
+                                        <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={year}
+                                    onChange={(e) => setYear(parseInt(e.target.value))}
+                                    className="bg-gray-800 text-indigo-400 text-sm font-medium border-none rounded focus:ring-0 cursor-pointer py-0 pl-0 pr-6"
+                                >
+                                    {[...Array(5)].map((_, i) => {
+                                        const y = new Date().getFullYear() - i;
+                                        return <option key={y} value={y}>{y}</option>;
+                                    })}
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-full transition text-gray-400">✕</button>
+
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-lg transition border border-gray-700/50 hover:border-gray-600 self-start md:self-center"
+                    >
+                        Close
+                    </button>
                 </div>
 
                 {loading ? (
                     <div className="py-12 text-center space-y-4">
                         <div className="animate-spin w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-                        <p className="text-indigo-300 font-medium">Analyzing your finances...</p>
+                        <p className="text-indigo-300 font-medium">Analyzing data for {periodName}...</p>
                     </div>
                 ) : (
-                    <div className="space-y-6 text-gray-300">
+                    <div className="space-y-6 text-gray-300 font-medium font-mono text-sm leading-7">
                         {advice?.raw_advice ? (
-                            <div className="prose prose-invert max-w-none">
-                                <div className="whitespace-pre-wrap leading-relaxed">
-                                    {advice.raw_advice}
-                                </div>
+                            <div className="whitespace-pre-wrap">
+                                {advice.raw_advice}
                             </div>
                         ) : (
                             <div className="text-center py-8 text-gray-500 bg-gray-800/50 rounded-2xl">
-                                <p>No advice available. Try adding more expenses to get insights.</p>
+                                <p>No advice available.</p>
                             </div>
                         )}
 
                         {advice?.mock && (
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl text-sm flex items-start gap-3">
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl text-sm flex items-start gap-3 font-sans">
                                 <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                                <span>Using mock data. Add OpenAI API Key to backend (.env) for real insights.</span>
+                                <div>
+                                    <span className="font-bold block mb-1">Using Mock Data</span>
+                                    <span>Please configure Gemini API Key for real insights.</span>
+                                </div>
                             </div>
                         )}
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }
 

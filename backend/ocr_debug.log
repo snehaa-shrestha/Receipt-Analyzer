@@ -34,3 +34,11 @@
 2026-01-08 11:56:35.046547 - OCR completed. Merchant: cheli bhansa ghar
 2026-01-08 12:01:42.556750 - Starting OCR for file: af4cc65c-90ce-46e7-94bb-c85de241da21.jpg
 2026-01-08 12:01:49.398440 - OCR completed. Merchant: BIG MART
+2026-01-08 13:57:59.241922 - Starting OCR for file: 7a671a06-1757-44e9-ad43-454877dc769e.jpg
+2026-01-08 13:57:59.680004 - Starting model initialization...
+2026-01-08 13:58:06.788443 - Model initialization successful!
+2026-01-08 13:58:13.577674 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 13:58:23.992986 - Starting OCR for file: 0660f3ec-d45b-4783-ac33-992a54537ac4.jpg
+2026-01-08 13:58:30.096196 - OCR completed. Merchant: TAX INVOICE
+2026-01-08 13:58:53.520812 - Starting OCR for file: 79f2b95b-3491-4360-9ebe-e00297ea9bcf.jpg
+2026-01-08 13:58:59.786747 - OCR completed. Merchant: cheli bhansa ghar
