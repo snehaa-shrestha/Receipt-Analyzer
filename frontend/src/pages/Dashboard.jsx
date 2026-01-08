@@ -203,7 +203,7 @@ export default function Dashboard() {
                                             <select
                                                 value={selectedMonth}
                                                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                                                className="flex-1 bg-white/10 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                                                className="flex-1 bg-gray-900/30 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
                                             >
                                                 <option value="1">January</option>
                                                 <option value="2">February</option>
@@ -221,7 +221,7 @@ export default function Dashboard() {
                                             <select
                                                 value={selectedYear}
                                                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                                className="bg-white/10 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                                                className="bg-gray-900/30 text-white border border-white/20 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
                                             >
                                                 {[...Array(5)].map((_, i) => {
                                                     const year = new Date().getFullYear() - i;

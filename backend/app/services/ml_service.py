@@ -7,12 +7,27 @@ async def predict_next_month_expenses(user_id: str):
     db = get_database()
     
     # 1. Fetch Expenses (Last 12 months)
-    expenses = await db.expenses.find({"user_id": user_id}).to_list(length=5000)
+    # merged logic: Get Receipts + Manual Expenses (receipt_id=None)
+    receipts = await db.receipts.find({"user_id": user_id}).to_list(length=5000)
+    manual_expenses = await db.expenses.find({"user_id": user_id, "receipt_id": None}).to_list(length=5000)
     
-    if not expenses:
+    data = []
+    for r in receipts:
+        data.append({
+            "date": r.get("date_extracted") or r.get("uploaded_at"),
+            "amount": r.get("total_amount", 0.0)
+        })
+        
+    for e in manual_expenses:
+        data.append({
+            "date": e.get("date"),
+            "amount": e.get("amount", 0.0)
+        })
+    
+    if not data:
         return {"predicted_amount": 0.0, "advice": "Start tracking expenses to see AI forecasts!"}
 
-    df = pd.DataFrame(expenses)
+    df = pd.DataFrame(data)
     df['date'] = pd.to_datetime(df['date'])
     
     # 2. Add Current Month Projection

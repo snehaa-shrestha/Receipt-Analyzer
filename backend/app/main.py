@@ -33,7 +33,7 @@ app.include_router(receipts.router, prefix="/api/receipts", tags=["receipts"])
 app.include_router(expenses.router, prefix="/api/expenses", tags=["expenses"])
 app.include_router(game.router, prefix="/api/game", tags=["game"])
 app.include_router(budgets.router, prefix="/api/budgets", tags=["budgets"])
-app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
+# app.include_router(ai.router, prefix="/api/ai", tags=["ai"])  # Temporarily disabled
 # Import users router inside main to avoid circular imports if any, or just import at top
 from app.routers import users
 app.include_router(users.router, prefix="/api/users", tags=["users"])

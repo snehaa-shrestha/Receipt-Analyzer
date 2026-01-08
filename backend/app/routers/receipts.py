@@ -25,8 +25,7 @@ async def upload_receipt(
     manual_category: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user)
 ):
-    from app.services.game_service import update_streak
-    await update_streak(current_user["user_id"])
+
     
     try:
         # Save file

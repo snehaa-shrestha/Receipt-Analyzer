@@ -15,7 +15,8 @@ export default function Login() {
             await login(username, password);
             navigate('/');
         } catch (err) {
-            setError('Invalid credentials');
+            console.error(err);
+            setError(err.response?.data?.detail || 'Login failed. Check server logs.');
         }
     };
 

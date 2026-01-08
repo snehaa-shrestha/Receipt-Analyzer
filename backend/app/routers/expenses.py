@@ -70,48 +70,58 @@ async def get_recent_transactions(
     year: Optional[int] = None,
     month: Optional[int] = None
 ):
+    """
+    Get recent transactions using Receipts + Manual Expenses (Source of Truth)
+    """
     user_id = current_user["user_id"]
     db = get_database()
     
     # Date Filtering
-    match_query = {"user_id": user_id}
-    receipt_match = {"user_id": user_id}
-    
+    date_query = {}
     if year and month:
         start_date = datetime(year, month, 1)
-        if month == 12: year_end, month_end = year + 1, 1
-        else: year_end, month_end = year, month + 1
-        end_date = datetime(year_end, month_end, 1)
-        
-        match_query["date"] = {"$gte": start_date, "$lt": end_date}
-        
-        # For receipts, use date_extracted or uploaded_at
-        # Note: receipts table stores date_extracted
-        receipt_match["date_extracted"] = {"$gte": start_date, "$lt": end_date}
+        if month == 12: end_date = datetime(year + 1, 1, 1)
+        else: end_date = datetime(year, month + 1, 1)
+        date_query = {"$gte": start_date, "$lt": end_date}
     
-    # We only need to fetch from expenses table now since it contains everything
-    # But for backward compatibility with existing frontend that expects 'type' distinct differentiation
-    # Let's perform the query on expenses table primarily
+    # 1. Fetch Receipts (using date_extracted or uploaded_at)
+    receipt_match = {"user_id": user_id}
+    if date_query: receipt_match["date_extracted"] = date_query
     
-    expenses = await db.expenses.find(match_query).sort("date", -1).limit(10).to_list(length=10)
+    receipts = await db.receipts.find(receipt_match).sort("date_extracted", -1).limit(10).to_list(length=10)
+    
+    # 2. Fetch Manual Expenses (receipt_id: None)
+    expense_match = {"user_id": user_id, "receipt_id": None}
+    if date_query: expense_match["date"] = date_query
+    
+    manual_expenses = await db.expenses.find(expense_match).sort("date", -1).limit(10).to_list(length=10)
     
     combined = []
-    for e in expenses:
+    
+    for r in receipts:
+        combined.append({
+            "_id": str(r["_id"]),
+            "type": "receipt",
+            "description": r.get("merchant_name", "Unknown Merchant"),
+            "amount": r.get("total_amount", 0.0),
+            "date": r.get("date_extracted") or r.get("uploaded_at"),
+            "category": "Shopping", # Default category for receipts header
+            "receipt_id": str(r["_id"])
+        })
+        
+    for e in manual_expenses:
         combined.append({
             "_id": str(e["_id"]),
-            "type": "expense" if not e.get("receipt_id") else "receipt",
+            "type": "expense",
             "description": e.get("description", "Unknown"),
             "amount": e.get("amount", 0.0),
             "date": e.get("date"),
             "category": e.get("category", "Uncategorized"),
-            "receipt_id": e.get("receipt_id")
+            "receipt_id": None
         })
-        
+    
+    # Sort and slice top 5
     combined.sort(key=lambda x: x["date"] if x["date"] else datetime.min, reverse=True)
-    
-    # Filter out transactions with null or zero amounts
-    combined = [tx for tx in combined if tx.get("amount") and tx.get("amount") > 0]
-    
     return combined[:5]
 
 @router.get("/summary")
@@ -121,49 +131,71 @@ async def get_expense_summary(
     year: Optional[int] = None,
     month: Optional[int] = None
 ):
-    db = get_database()
+    """
+    Calculate totals from Receipts + Manual Expenses to ensure accuracy.
+    """
     user_id = current_user["user_id"]
+    db = get_database()
     
-    # Prepare Date Query
-    match_query = {}
+    # Date Filtering
+    start_date = None
+    end_date = None
     now = datetime.utcnow()
     target_year = year or now.year
     target_month = month or now.month
-
-    start_date = None
-    end_date = None
-
+    
     if period == "month":
         start_date = datetime(target_year, target_month, 1)
         if target_month == 12: year_end, month_end = target_year + 1, 1
         else: year_end, month_end = target_year, target_month + 1
         end_date = datetime(year_end, month_end, 1)
-        
     elif period == "year":
         start_date = datetime(target_year, 1, 1)
         end_date = datetime(target_year + 1, 1, 1)
-
-    # Aggregate ALL Expenses (both manual and from receipts)
-    # Note: Receipt items are already stored in expenses table with receipt_id set
-    # So we don't need to query receipts table separately to avoid double-counting
-    exp_match = {"user_id": user_id}
-    if start_date: exp_match["date"] = {"$gte": start_date, "$lt": end_date}
-    
-    exp_pipeline = [
-        {"$match": exp_match},
-        {"$group": {"_id": "$category", "total": {"$sum": "$amount"}}}
-    ]
-    exp_result = await db.expenses.aggregate(exp_pipeline).to_list(None)
-    
-    # Build summary from expenses only (no double-counting)
-    summary = {}
-    for r in exp_result:
-        category = r["_id"] or "Uncategorized"
-        summary[category] = summary.get(category, 0) + r["total"]
         
-    # Format for frontend
-    final_result = [{"_id": k, "total": v} for k, v in summary.items()]
-    return final_result
+    date_query = {}
+    if start_date: date_query = {"$gte": start_date, "$lt": end_date}
+    
+    # 1. From Receipts
+    receipt_match = {"user_id": user_id}
+    if date_query: receipt_match["date_extracted"] = date_query
+    
+    receipts = await db.receipts.find(receipt_match).to_list(None)
+    
+    # 2. From Manual Expenses
+    expense_match = {"user_id": user_id, "receipt_id": None}
+    if date_query: expense_match["date"] = date_query
+    
+    expenses = await db.expenses.find(expense_match).to_list(None)
+    
+    # Aggregate
+    summary = {}
+    
+    for r in receipts:
+        # For receipts, we use a single category "Shopping" or try to infer?
+        # Since we are ignoring items, we lump the whole receipt total into one category.
+        # Ideally, we would sum the items, but if items are messy, Total is safer.
+        # Let's check if the receipt has a "category" field? receipts.py doesn't set it on the receipt doc usually.
+        # Check if receipts logic has changed... receipts.py puts category in items.
+        # For now, put receipt totals in "Shopping" or "Groceries" if inferred.
+        # Or, we can query the expenses table ONLY for items linked to these receipts?
+        # NO, user said items were messy. Using Receipt Total is safer for the "Total Spent" number.
+        # But for Category Breakdown, this is less accurate.
+        # HOWEVER, correctness of Total > Correctness of Category Breakdown.
+        cat = "Shopping" # Default
+        
+        # Simple heuristic if available in merchant name
+        m_lower = r.get("merchant_name", "").lower()
+        if any(k in m_lower for k in ['food', 'bhat', 'cafe', 'restaurant']): cat = "Food"
+        elif any(k in m_lower for k in ['mart', 'store', 'market']): cat = "Groceries"
+        
+        summary[cat] = summary.get(cat, 0) + r.get("total_amount", 0.0)
+        
+    for e in expenses:
+        cat = e.get("category", "Uncategorized")
+        summary[cat] = summary.get(cat, 0) + e.get("amount", 0.0)
+        
+    return [{"_id": k, "total": v} for k, v in summary.items()]
 
 @router.get("/forecast")
 async def get_forecast(current_user: dict = Depends(get_current_user)):

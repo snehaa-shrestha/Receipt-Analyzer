@@ -9,7 +9,6 @@ export default function UploadReceipt() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
-
     const [manualCategory, setManualCategory] = useState('');
 
     const CATEGORIES = ["Food", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];
@@ -28,11 +27,11 @@ export default function UploadReceipt() {
         if (!file) return;
 
         setLoading(true);
+        setError('');
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            // Send only category, date will be auto-detected by OCR
             const queryParams = new URLSearchParams();
             if (manualCategory) queryParams.append('manual_category', manualCategory);
 
@@ -41,7 +40,8 @@ export default function UploadReceipt() {
             });
             setResult(res.data);
         } catch (e) {
-            setError('Upload failed. Please try again.');
+            console.error(e);
+            setError(e.response?.data?.detail || 'Upload failed. Please try again.');
         } finally {
             setLoading(false);
         }

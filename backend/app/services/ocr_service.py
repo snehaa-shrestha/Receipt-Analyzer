@@ -207,7 +207,8 @@ class ReceiptAnalyzer:
 
     def _normalize_date(self, date_str: str) -> Optional[datetime]:
         date_str = date_str.replace('.', '/').replace('-', '/').replace(' ', '').replace('年', '-').replace('月', '-').replace('日', '')
-        date_formats = ['%Y/%m/%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m-%d-%Y', '%d%b%Y']
+        # Prioritize Month/Day/Year (US format) before Day/Month/Year for accurate parsing
+        date_formats = ['%Y/%m/%d', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d', '%m-%d-%Y', '%d-%m-%Y', '%d%b%Y']
         for fmt in date_formats:
             try:
                 dt = datetime.strptime(date_str, fmt)
@@ -302,16 +303,33 @@ class ReceiptAnalyzer:
 
     def _extract_items(self, text_blocks: List[str]) -> List[Dict]:
         items = []
-        pattern = fr'(.*?)\s*({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+[.,]\d{{2}})'
+        # Exclude internal headers/footers
+        noise_words = ['total', 'subtotal', 'tax', 'date', 'amount', 'due', 'thank', 'visit', 'hscode', 'gst', 'vat', 'net', 'change', 'cash', 'card']
+        
+        # Regex to capture: Description ... Price
+        # Improved to be less greedy and capture clean prices at end of line
+        pattern = fr'(.*?)\s*({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+[.,]\d{{2}})$'
+        
         for text in text_blocks:
-            if any(k in text.lower() for k in ['total', 'subtotal', 'tax', 'date', 'amount', 'due']): continue
+            # Filter out noise lines
+            if any(k in text.lower() for k in noise_words): continue
+            
+            # Additional check: skip lines that are just dates
+            if re.search(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text): continue
+
             if match := re.search(pattern, text):
                 val = self._clean_numeric_value(match.group(3))
                 desc = match.group(1).strip()
+                
+                # Clean description (remove leading "1).", "1.", "*", etc)
+                desc = re.sub(r'^[\d]+\s*[).]*\s*', '', desc)
+                desc = re.sub(r'^[^\w\s]+', '', desc).strip()
+
                 # Validate item price - cap at $10,000 to prevent OCR errors
                 MAX_ITEM_PRICE = 10000
                 if val > 0 and val <= MAX_ITEM_PRICE and len(desc) > 2:
                     items.append({'item_name': desc, 'price': float(val)})
+                    
         return items
 
     def _get_description(self, text_blocks: List[str]) -> Optional[str]:
