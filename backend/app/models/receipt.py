@@ -10,6 +10,7 @@ class ReceiptItem(BaseModel):
 
 class ReceiptSchema(BaseModel):
     user_id: str
+    workspace_id: Optional[str] = None
     image_url: str
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     merchant_name: Optional[str] = None
@@ -21,6 +22,7 @@ class ReceiptSchema(BaseModel):
 
 class ExpenseSchema(BaseModel):
     user_id: Optional[str] = None
+    workspace_id: Optional[str] = None
     amount: float
     category: str
     date: datetime = Field(default_factory=datetime.utcnow)

@@ -12,6 +12,13 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Auto-inject Workspace ID for data routes
+    const activeWorkspaceId = localStorage.getItem('activeWorkspace');
+    if (activeWorkspaceId && config.url && !config.url.includes('/auth') && !config.url.includes('/workspaces/') && !config.url.includes('/social')) {
+        config.params = { ...config.params, workspace_id: activeWorkspaceId };
+    }
+
     return config;
 });
 

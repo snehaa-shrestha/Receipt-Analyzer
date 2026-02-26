@@ -3,13 +3,24 @@ import pandas as pd
 import numpy as np
 from app.database import get_database
 
-async def predict_next_month_expenses(user_id: str):
+async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
     db = get_database()
     
+    # Base match logic based on workspace
+    base_match = {}
+    if workspace_id:
+        from bson import ObjectId
+        workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+        if not workspace or not any(m["user_id"] == user_id for m in workspace.get("members", [])):
+            return {"predicted_amount": 0.0, "advice": "Not authorized to view ML forecast for this workspace."}
+        base_match = {"workspace_id": workspace_id}
+    else:
+        base_match = {"user_id": user_id, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
+        
     # 1. Fetch Expenses (Last 12 months)
     # merged logic: Get Receipts + Manual Expenses (receipt_id=None)
-    receipts = await db.receipts.find({"user_id": user_id}).to_list(length=5000)
-    manual_expenses = await db.expenses.find({"user_id": user_id, "receipt_id": None}).to_list(length=5000)
+    receipts = await db.receipts.find({**base_match}).to_list(length=5000)
+    manual_expenses = await db.expenses.find({**base_match, "receipt_id": None}).to_list(length=5000)
     
     data = []
     for r in receipts:

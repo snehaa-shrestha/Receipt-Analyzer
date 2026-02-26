@@ -28,12 +28,20 @@ async def create_budget(budget: BudgetSchema, current_user: dict = Depends(get_c
     return {"message": "Budget set"}
 
 @router.get("/status")
-async def get_budget_status(current_user: dict = Depends(get_current_user)):
+async def get_budget_status(
+    current_user: dict = Depends(get_current_user),
+    year: int = None,
+    month: int = None,
+    workspace_id: str = None
+):
+    if workspace_id:
+        return []
+        
     user_id = current_user["user_id"]
     db = get_database()
     now = datetime.utcnow()
-    current_month = now.month
-    current_year = now.year
+    current_month = month or now.month
+    current_year = year or now.year
     
     # Get all budgets for current month
     budgets = await db.budgets.find({
@@ -54,7 +62,8 @@ async def get_budget_status(current_user: dict = Depends(get_current_user)):
                     "date": {
                         "$gte": datetime(current_year, current_month, 1),
                         "$lt": datetime(current_year, current_month + 1, 1) if current_month < 12 else datetime(current_year + 1, 1, 1)
-                    }
+                    },
+                    "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]
                 }
             },
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}}

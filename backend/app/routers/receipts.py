@@ -23,6 +23,7 @@ async def upload_receipt(
     file: UploadFile = File(...), 
     manual_date: Optional[str] = Query(None),
     manual_category: Optional[str] = Query(None),
+    workspace_id: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user)
 ):
 
@@ -59,14 +60,15 @@ async def upload_receipt(
         elif any(k in m_lower for k in ['fuel', 'petrol', 'taxi', 'ride']): detected_category = "Transport"
         
         # Enrich items with categories (Prioritize Manual Category if set)
+        # Use manual_category when it's explicitly provided (non-None and non-empty)
+        use_category = manual_category.strip() if manual_category and manual_category.strip() else detected_category
         enriched_items = []
         for item in parsed_data.get("items", []):
-            category = manual_category if manual_category else detected_category
             enriched_items.append({
                 "description": item["item_name"], # Note: ReceiptAnalyzer uses 'item_name'
                 "amount": item["price"],          # Note: ReceiptAnalyzer uses 'price'
                 "quantity": 1.0,
-                "category": category
+                "category": use_category
             })
         
         # Determine date - Prioritize OCR extraction, fallback to manual, then upload date
@@ -86,14 +88,17 @@ async def upload_receipt(
         # Create Receipt Object
         receipt_data = {
             "user_id": current_user["user_id"],
+            "workspace_id": workspace_id,
             "image_url": filepath, # In prod, return a static URL
             "uploaded_at": datetime.utcnow(),
             "merchant_name": parsed_data.get("merchant_name", "Unknown"),
             "total_amount": parsed_data.get("total_amount") or 0.0,
             "date_extracted": final_date,
             "raw_text": parsed_data.get("raw_text", ""),
+            "category": use_category,
             "items": enriched_items
         }
+
         
         db = get_database()
         new_receipt = await db.receipts.insert_one(receipt_data)
@@ -104,6 +109,7 @@ async def upload_receipt(
         for item in enriched_items:
             expense_docs.append({
                 "user_id": current_user["user_id"],
+                "workspace_id": workspace_id,
                 "description": item["description"],
                 "amount": item["amount"],
                 "category": item["category"],
@@ -120,6 +126,7 @@ async def upload_receipt(
             
             await db.expenses.insert_one({
                 "user_id": current_user["user_id"],
+                "workspace_id": workspace_id,
                 "description": merchant_name,
                 "amount": receipt_data["total_amount"],
                 "category": manual_category or detected_category,
@@ -153,17 +160,33 @@ async def get_receipts(
     current_user: dict = Depends(get_current_user),
     skip: int = 0,
     amount: int = 10,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    workspace_id: Optional[str] = None
 ):
     db = get_database()
-    query = {"user_id": current_user["user_id"]}
+    
+    if workspace_id:
+        from bson import ObjectId
+        workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+        if not workspace or not any(m["user_id"] == current_user["user_id"] for m in workspace.get("members", [])):
+            raise HTTPException(status_code=403, detail="Not a member of this workspace")
+        query = {"workspace_id": workspace_id}
+    else:
+        # Personal receipts
+        query = {"user_id": current_user["user_id"], "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
     
     if search:
         # Text search on merchant or raw text
+        # If user also specified workspace search, note that MongoDB ANDs top-level keys
+        # So query will be {user_id: ..., "$or": [...], "category": ...}
         query["$or"] = [
             {"merchant_name": {"$regex": search, "$options": "i"}},
             {"raw_text": {"$regex": search, "$options": "i"}}
         ]
+        
+    if category and category.lower() != "all":
+        query["category"] = {"$regex": f"^{category}$", "$options": "i"}
         
     cursor = db.receipts.find(query).skip(skip).limit(amount).sort("uploaded_at", -1)
     receipts = await cursor.to_list(length=amount)
@@ -188,10 +211,20 @@ async def delete_receipt(
         raise HTTPException(status_code=400, detail="Invalid receipt ID")
         
     # Find receipt
-    receipt = await db.receipts.find_one({
-        "_id": r_oid, 
-        "user_id": current_user["user_id"]
-    })
+    receipt = await db.receipts.find_one({"_id": r_oid})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+        
+    # Check permissions (must be the uploader or admin of the workspace)
+    if receipt.get("workspace_id"):
+        workspace = await db.workspaces.find_one({"_id": ObjectId(receipt["workspace_id"])})
+        is_admin = False
+        if workspace:
+            is_admin = any(m["user_id"] == current_user["user_id"] and m["role"] == "admin" for m in workspace.get("members", []))
+        if receipt["user_id"] != current_user["user_id"] and not is_admin:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this receipt")
+    elif receipt["user_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this receipt")
     
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")

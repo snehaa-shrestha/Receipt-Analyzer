@@ -1,5 +1,6 @@
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import {
@@ -16,10 +17,13 @@ import {
   ArrowRight,
   PieChart as PieChartIcon,
   Activity,
-  DollarSign,
+  IndianRupee,
   Flame,
   Sparkles,
+  Trash2,
+  BrainCircuit,
 } from "lucide-react";
+import { getCategoryColor } from '../utils/categoryColors';
 import {
   RadialBarChart,
   RadialBar,
@@ -34,6 +38,7 @@ import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [stats, setStats] = useState({
     spent: 0,
     budget: 0,
@@ -47,6 +52,7 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Month/Year selector state
   const now = new Date();
@@ -55,12 +61,12 @@ export default function Dashboard() {
 
   const currencySymbol =
     {
-      USD: "$",
+      USD: "Rs.",
       EUR: "€",
       GBP: "£",
       JPY: "¥",
-      NPR: "Rs",
-    }[user?.currency || "USD"] || "$";
+      NPR: "Rs.",
+    }[user?.currency || "NPR"] || "Rs.";
 
   const COLORS = ["#8B5CF6", "#EC4899", "#3B82F6", "#10B981", "#F59E0B"];
 
@@ -69,7 +75,7 @@ export default function Dashboard() {
       const [gameRes, budgetRes, expenseRes, forecastRes, summaryRes] =
         await Promise.all([
           api.get("/game/progress"),
-          api.get("/budgets/status"),
+          api.get(`/budgets/status?year=${year}&month=${month}`),
           api.get(`/expenses/recent-transactions?year=${year}&month=${month}`),
           api.get("/expenses/forecast"),
           api.get(`/expenses/summary?period=month&year=${year}&month=${month}`),
@@ -79,7 +85,7 @@ export default function Dashboard() {
         (acc, curr) => acc + curr.total,
         0
       );
-      const globalBudget = user?.monthly_budget || 0;
+      const globalBudget = activeWorkspace ? activeWorkspace.budget : (user?.monthly_budget || 0);
       const categoryBudgetTotal = budgetRes.data.reduce(
         (acc, curr) => acc + curr.limit,
         0
@@ -109,7 +115,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) fetchData();
-  }, [user, logout]);
+  }, [user, logout, activeWorkspace]);
 
   // Refetch when month/year changes
   useEffect(() => {
@@ -117,19 +123,32 @@ export default function Dashboard() {
   }, [selectedYear, selectedMonth]);
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
-      const response = await api.get("/expenses/export", {
+      const response = await api.get(`/expenses/export?year=${selectedYear}&month=${selectedMonth}`, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "expenses_report.csv");
+      link.setAttribute("download", `financial_report.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (e) {
       alert("Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDelete = async (expenseId) => {
+    if (!window.confirm("Delete this expense?")) return;
+    try {
+      await api.delete(`/expenses/${expenseId}`);
+      fetchData(selectedYear, selectedMonth);
+    } catch (e) {
+      alert(e.response?.data?.detail || "Failed to delete expense.");
     }
   };
 
@@ -155,17 +174,21 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Financial Overview
+              {activeWorkspace ? `Workspace: ${activeWorkspace.name}` : 'Personal Financial Overview'}
             </div>
             <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
               {getGreeting()}, {user?.username}
             </h1>
           </div>
           <div className="flex gap-3">
-            {/* <button onClick={handleExport} className="group bg-gray-900/50 hover:bg-gray-800 text-gray-300 border border-gray-700/50 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md">
-                            <Download size={18} className="group-hover:-translate-y-0.5 transition-transform" />
-                            <span>Export</span>
-                        </button> */}
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="group bg-gray-900/50 hover:bg-gray-800 text-gray-300 border border-gray-700/50 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md disabled:opacity-50"
+            >
+              {isExporting ? <Activity size={18} className="animate-spin" /> : <Download size={18} className="group-hover:-translate-y-0.5 transition-transform" />}
+              <span>{isExporting ? 'Exporting...' : 'Export CSV'}</span>
+            </button>
             <button
               onClick={handleAIAdvice}
               className="group bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md"
@@ -212,7 +235,7 @@ export default function Dashboard() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-indigo-200 font-medium mb-1 flex items-center gap-2">
-                        <Wallet size={16} /> Monthly Budget
+                        <Wallet size={16} /> {activeWorkspace ? 'Shared Budget' : 'Monthly Budget'}
                       </p>
                       <h2 className="text-5xl font-bold tracking-tight">
                         {currencySymbol}
@@ -230,16 +253,14 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right">
                       <p
-                        className={`font-medium mb-1 ${
-                          remaining < 0 ? "text-red-200" : "text-indigo-200"
-                        }`}
+                        className={`font-medium mb-1 ${remaining < 0 ? "text-red-200" : "text-indigo-200"
+                          }`}
                       >
                         {remaining < 0 ? "Overspent" : "Remaining"}
                       </p>
                       <h3
-                        className={`text-3xl font-bold flex items-center justify-end gap-2 ${
-                          remaining < 0 ? "text-red-300" : "text-emerald-300"
-                        }`}
+                        className={`text-3xl font-bold flex items-center justify-end gap-2 ${remaining < 0 ? "text-red-300" : "text-emerald-300"
+                          }`}
                       >
                         {remaining < 0 ? (
                           <TrendingDown size={28} />
@@ -262,9 +283,8 @@ export default function Dashboard() {
                     </div>
                     <div className="h-4 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
                       <div
-                        className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.3)] ${
-                          progress > 100 ? "bg-red-400" : "bg-white"
-                        }`}
+                        className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.3)] ${progress > 100 ? "bg-red-400" : "bg-white"
+                          }`}
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
@@ -388,11 +408,10 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg shadow-inner ${
-                          tx.receipt_id
-                            ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20 text-blue-400"
-                            : "bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-400"
-                        }`}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg shadow-inner ${tx.receipt_id
+                          ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20 text-blue-400"
+                          : "bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-400"
+                          }`}
                       >
                         {tx.receipt_id ? (
                           <FileText size={20} />
@@ -405,7 +424,7 @@ export default function Dashboard() {
                           {tx.description}
                         </h4>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                          <span className="bg-gray-900 px-2 py-0.5 rounded text-gray-400">
+                          <span className={`px-2 py-0.5 rounded border ${getCategoryColor(tx.category).badgeClasses}`}>
                             {tx.category || "Uncategorized"}
                           </span>
                           <span>•</span>
@@ -413,14 +432,23 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="block font-bold text-white text-lg">
-                        {currencySymbol}
-                        {(tx.amount || 0).toFixed(2)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {tx.receipt_id ? "Receipt" : "Manual"}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="block font-bold text-white text-lg">
+                          {currencySymbol}
+                          {(tx.amount || 0).toFixed(2)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {tx.receipt_id ? "Receipt" : "Manual"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(tx._id)}
+                        title="Delete expense"
+                        className="opacity-0 group-hover:opacity-100 p-2 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 hover:text-red-300 transition-all duration-200"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))
@@ -643,27 +671,34 @@ function AIAdvisorModal({ onClose, year, setYear, month, setMonth }) {
 }
 
 function AddExpenseModal({ onClose, refresh, currencySymbol }) {
+  const { activeWorkspace } = useWorkspace();
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
     category: "",
   });
+  const CATEGORIES = ["Food", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
+      // Pass workspace_id in the body so the expense is stored in the same
+      // scope that the dashboard's GET queries filter by.
       await api.post("/expenses/", {
         description: formData.description,
         amount: parseFloat(formData.amount),
-        category: formData.category || "Uncategorized",
+        category: formData.category,
         date: new Date().toISOString(),
+        workspace_id: activeWorkspace ? activeWorkspace._id : null,
       });
       refresh();
       onClose();
-    } catch (e) {
-      alert("Failed to add expense");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to add expense. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -721,19 +756,29 @@ function AddExpenseModal({ onClose, refresh, currencySymbol }) {
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                Category
+                Category <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
+                required
                 className="w-full bg-gray-800/50 text-white rounded-xl p-4 border border-gray-700 focus:border-indigo-500 outline-none transition font-medium"
                 value={formData.category}
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
                 }
-                placeholder="Food"
-              />
+              >
+                <option value="">-- Select Category --</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"

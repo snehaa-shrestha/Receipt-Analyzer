@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 import { TrendingUp, Activity, Filter, PieChart as PieChartIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getCategoryColor } from '../utils/categoryColors';
 
 export default function Analytics() {
     const { user } = useAuth();
@@ -14,12 +15,12 @@ export default function Analytics() {
     const [period, setPeriod] = useState('all'); // all, year, month
 
     const currencySymbol = {
-        'USD': '$',
+        'USD': 'Rs.',
         'EUR': '€',
         'GBP': '£',
         'JPY': '¥',
-        'NPR': 'Rs'
-    }[user?.currency || 'USD'] || '$';
+        'NPR': 'Rs.'
+    }[user?.currency || 'USD'] || 'Rs.';
 
     useEffect(() => {
         const fetchData = async () => {
@@ -172,7 +173,7 @@ export default function Analytics() {
                                     stroke="none"
                                 >
                                     {summary.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={getCategoryColor(entry._id).hex} />
                                     ))}
                                 </Pie>
                                 <Tooltip

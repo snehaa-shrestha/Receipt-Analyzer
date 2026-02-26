@@ -107,3 +107,92 @@
 2026-01-09 16:27:28.493222 - Starting model initialization...
 2026-01-09 16:27:39.504260 - Model initialization successful!
 2026-01-09 16:27:52.042750 - OCR completed. Merchant: BIG MART
+2026-02-23 12:35:55.797844 - Starting OCR for file: 976ca4b0-2018-4cf0-bb3b-ff611f6f8dfb.jpg
+2026-02-23 12:36:01.944851 - Starting model initialization...
+2026-02-23 12:36:35.268735 - Model initialization successful!
+2026-02-23 12:37:08.855067 - OCR completed. Merchant: cheli bhansa ghar
+2026-02-23 16:53:06.460906 - Starting OCR for file: 68c9e5d0-07e2-4851-80ed-08b9b44d2b17.jpg
+2026-02-23 16:53:07.597876 - Starting model initialization...
+2026-02-23 16:53:22.192748 - Model initialization successful!
+2026-02-23 16:53:37.653826 - OCR completed. Merchant: Alico Conforance Pyt. Lt
+2026-02-23 16:56:38.642280 - Starting OCR for file: cc8b7a04-e96c-4e74-a599-f9a476bd5d47.jpg
+2026-02-23 16:56:46.116936 - OCR completed. Merchant: New Chong Quing Wei Restaurant
+2026-02-23 16:58:11.989113 - Starting OCR for file: 319dfb4d-1808-497e-bf30-aa0f2c552847.jpg
+2026-02-23 16:58:20.146923 - WARNING: Extracted amount $162,501.00 exceeds maximum. Capping at $100,000.00
+2026-02-23 16:58:20.149590 - OCR completed. Merchant: TAX INVOICE
+2026-02-23 17:01:23.366173 - Starting OCR for file: fc2853ee-2324-4a8f-a748-eceb4f965b99.jpg
+2026-02-23 17:01:30.468004 - OCR completed. Merchant: BIG MART
+2026-02-23 17:02:39.991823 - Starting OCR for file: 47ff4a4d-dd1e-4f66-9edb-645171ab1d9e.jpg
+2026-02-23 17:02:47.339549 - OCR completed. Merchant: Korean Restaurant
+2026-02-23 17:03:56.891174 - Starting OCR for file: cd6343ee-8e46-4d74-9b5f-ae4477ee6c6f.jpg
+2026-02-23 17:04:05.261840 - OCR completed. Merchant: BHAT- BHATENI SUPER MARKETINAXAL)
+2026-02-23 17:09:24.665891 - Starting OCR for file: e1d40137-e63a-41f2-910b-b4ea5aa9b30a.jpg
+2026-02-23 17:09:31.871327 - OCR completed. Merchant: Brothers Auto Point Pvt. Ltd.
+2026-02-23 17:12:58.315081 - Starting OCR for file: adfa648a-1abc-4699-9ef7-7a36adc5ce5c.jpg
+2026-02-23 17:13:06.340200 - OCR completed. Merchant: Netfiniti Pvt, Ltd.
+2026-02-23 17:15:24.049114 - Starting OCR for file: bcecfa05-4f54-4396-be57-b0c758e73658.jpg
+2026-02-23 17:15:32.603600 - OCR completed. Merchant: Netfiniti Pvt, Lid.
+2026-02-25 09:25:30.492383 - Starting OCR for file: 4f0de889-f6bf-4483-914f-e530ba8acec2.jpg
+2026-02-25 09:25:31.670698 - Starting model initialization...
+2026-02-25 09:25:47.219549 - Model initialization successful!
+2026-02-25 09:26:09.375324 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 09:27:47.359289 - Starting OCR for file: d44e597e-2339-4e44-8c4a-cfeb02fc9d33.jpg
+2026-02-25 09:27:53.581266 - OCR completed. Merchant: cheli bhansa ghar
+2026-02-25 09:50:57.369742 - Starting OCR for file: 2e568202-3731-4005-9939-cd2743d5d24b.jpg
+2026-02-25 09:51:08.149747 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 10:16:01.800516 - Starting OCR for file: 3515ce11-8275-4072-8d13-c5eed0624436.jpg
+2026-02-25 10:16:02.530809 - Starting model initialization...
+2026-02-25 10:16:13.292498 - Model initialization successful!
+2026-02-25 10:16:23.221641 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 10:41:26.215377 - Starting OCR for file: 9f0b7f5c-c988-4645-b315-63a71e209f61.jpg
+2026-02-25 10:42:21.494718 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 11:00:03.994957 - Starting OCR for file: 0cae4aa9-1fad-467f-8ad8-be3e96f275ef.jpg
+2026-02-25 11:00:05.310501 - Starting model initialization...
+2026-02-25 11:00:19.369632 - Model initialization successful!
+2026-02-25 11:00:31.345955 - OCR completed. Merchant: Alico Conforance Pyt. Lt
+2026-02-25 11:06:55.122263 - Starting OCR for file: 36b2bcf9-56b4-42b5-9da3-0236265b3a41.png
+2026-02-25 11:07:04.150320 - OCR completed. Merchant: Unknown
+2026-02-25 12:00:05.848488 - Starting OCR for file: 15a98256-3201-4f91-80f2-1d1ebb74c133.jpg
+2026-02-25 12:00:11.817116 - Starting model initialization...
+2026-02-25 12:00:34.835988 - Model initialization successful!
+2026-02-25 12:01:13.510111 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 12:03:24.153508 - Starting OCR for file: e399a6f5-4c91-432e-93bf-ac52ed50dd81.jpg
+2026-02-25 12:03:30.884839 - OCR completed. Merchant: BHAT- BHATENI SUPER MARKETINAXAL)
+2026-02-25 12:07:21.871328 - Starting OCR for file: 4a791dc3-abbe-452c-ba38-22da55058248.jpg
+2026-02-25 12:07:31.031356 - OCR completed. Merchant: cheli bhansa ghar
+2026-02-25 12:19:55.438842 - Starting OCR for file: a1cdaf61-b701-4d15-9b5e-866470e2f2dd.jpg
+2026-02-25 12:19:55.794879 - Starting model initialization...
+2026-02-25 12:20:00.854834 - Model initialization successful!
+2026-02-25 12:20:12.425962 - OCR completed. Merchant: Korean Restaurant
+2026-02-25 12:59:09.158438 - Starting OCR for file: b099dfcb-f07a-4c70-b64b-e7b5fbfc8c53.jpg
+2026-02-25 12:59:13.148554 - Starting model initialization...
+2026-02-25 12:59:20.587477 - Model initialization successful!
+2026-02-25 12:59:31.290588 - OCR completed. Merchant: BIG MART
+2026-02-25 13:00:56.857706 - Starting OCR for file: cd1dee43-8436-405c-862a-c506052af4db.jpg
+2026-02-25 13:01:03.112149 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-25 13:01:33.990904 - Starting OCR for file: 14552094-2c75-4c23-aa42-31300ff4c1c8.jpg
+2026-02-25 13:01:39.976507 - OCR completed. Merchant: Alico Conforance Pyt. Lt
+2026-02-26 09:37:37.121654 - Starting OCR for file: 05402a6b-784c-48b4-8699-e4d85d15cbcd.jpg
+2026-02-26 09:37:38.002761 - Starting model initialization...
+2026-02-26 09:37:48.972310 - Model initialization successful!
+2026-02-26 09:38:05.493378 - OCR completed. Merchant: Korean Restaurant
+2026-02-26 09:52:59.070763 - Starting OCR for file: 7ea3a447-d399-4d58-8f8e-560ae18632fc.jpg
+2026-02-26 09:53:58.333671 - OCR completed. Merchant: MOCK RECEIPT
+2026-02-26 10:08:41.834056 - Starting OCR for file: cd281d15-d1c6-4d65-9e49-019588813167.jpg
+2026-02-26 10:08:42.998135 - Starting model initialization...
+2026-02-26 10:08:55.762636 - Model initialization successful!
+2026-02-26 10:09:16.399394 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-26 11:23:42.790480 - Starting OCR for file: 7d0feaa4-d217-46e0-b119-40925c344fdc.jpg
+2026-02-26 11:23:44.143960 - Starting model initialization...
+2026-02-26 11:23:59.824835 - Model initialization successful!
+2026-02-26 11:24:18.470063 - OCR completed. Merchant: cheli bhansa ghar
+2026-02-26 12:02:05.365896 - Starting OCR for file: 870001bd-5dc6-4f0a-a1e0-3f9b157c9c48.jpg
+2026-02-26 12:02:07.262762 - Starting model initialization...
+2026-02-26 12:02:24.392040 - Model initialization successful!
+2026-02-26 12:02:52.328300 - OCR completed. Merchant: Korean Restaurant
+2026-02-26 12:45:59.919357 - Starting OCR for file: 727a2916-4edb-4965-93a6-42d5a8cec226.jpg
+2026-02-26 12:46:00.309718 - Starting model initialization...
+2026-02-26 12:46:12.375097 - Model initialization successful!
+2026-02-26 12:46:25.669406 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-02-26 12:48:00.351201 - Starting OCR for file: 9113d2e0-c0af-4729-8b8a-ac95b9c4f1ce.jpg
+2026-02-26 12:48:14.287138 - OCR completed. Merchant: Alico Conforance Pyt. Lt

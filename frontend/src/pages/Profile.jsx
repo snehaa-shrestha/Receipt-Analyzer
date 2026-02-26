@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { User, DollarSign, Save, Loader, Mail, Wallet, CreditCard } from 'lucide-react';
+import { User, IndianRupee, Save, Loader, Mail, Wallet, CreditCard } from 'lucide-react';
 
 export default function Profile() {
     const { user, updateUser } = useAuth();
@@ -139,7 +139,7 @@ export default function Profile() {
                                 <div>
                                     <label className="block text-gray-400 text-sm mb-2 font-medium">Monthly Budget Limit</label>
                                     <div className="relative">
-                                        <DollarSign size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rs.</span>
                                         <input
                                             type="number"
                                             name="monthly_budget"

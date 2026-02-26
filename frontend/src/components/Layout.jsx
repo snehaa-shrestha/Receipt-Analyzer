@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Upload, BarChart3, LogOut, Search, Gamepad2, User } from 'lucide-react';
+import { LayoutDashboard, Upload, BarChart3, LogOut, Search, Gamepad2, User, Users } from 'lucide-react';
+import WorkspaceSelector from './WorkspaceSelector';
+import ChatWindow from './ChatWindow';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
 
@@ -13,6 +15,7 @@ export default function Layout({ children }) {
         { icon: Search, label: 'Search', path: '/gallery' },
         { icon: BarChart3, label: 'Analytics', path: '/analytics' },
         { icon: Gamepad2, label: 'Quests', path: '/game' },
+        { icon: Users, label: 'Network', path: '/network' },
         { icon: User, label: 'Profile', path: '/profile' },
     ];
 
@@ -26,6 +29,8 @@ export default function Layout({ children }) {
                     </h1>
                     {/* <p className="text-sm text-gray-400 mt-1">Plan. Track. Win.</p> */}
                 </div>
+
+                <WorkspaceSelector />
 
                 <nav className="flex-1 p-4 space-y-2">
                     {navItems.map((item) => {
@@ -77,6 +82,9 @@ export default function Layout({ children }) {
                     {children}
                 </div>
             </main>
+
+            {/* Global Chat Component */}
+            <ChatWindow />
         </div>
     );
 }

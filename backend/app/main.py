@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, receipts, expenses, game, budgets, ai
+from app.routers import auth, receipts, expenses, game, budgets, ai, social, workspaces, chat
 from app.database import check_db_connection
 import logging
 
@@ -39,6 +39,9 @@ app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 # Import users router inside main to avoid circular imports if any, or just import at top
 from app.routers import users
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(social.router, prefix="/api/social", tags=["social"])
+app.include_router(workspaces.router, prefix="/api/workspaces", tags=["workspaces"])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 
 
 @app.get("/")

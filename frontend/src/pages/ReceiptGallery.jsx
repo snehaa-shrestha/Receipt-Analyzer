@@ -2,31 +2,38 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Search, FileText, Trash2, Calendar } from 'lucide-react';
+import { Search, FileText, Trash2, Calendar, Filter } from 'lucide-react';
+import { getCategoryColor } from '../utils/categoryColors';
+
+const CATEGORIES = ["All", "Food", "Groceries", "Transport", "Utilities", "Entertainment", "Shopping", "Other"];
 
 export default function ReceiptGallery() {
     const { user } = useAuth();
     const [receipts, setReceipts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [deleteLoading, setDeleteLoading] = useState(null);
 
     const currencySymbol = {
-        'USD': '$',
+        'USD': 'Rs.',
         'EUR': '€',
         'GBP': '£',
         'JPY': '¥',
-        'NPR': 'Rs'
-    }[user?.currency || 'USD'] || '$';
+        'NPR': 'Rs.'
+    }[user?.currency || 'USD'] || 'Rs.';
 
     useEffect(() => {
-        fetchReceipts();
+        fetchReceipts(searchTerm, selectedCategory);
     }, []);
 
-    const fetchReceipts = async (search = '') => {
+    const fetchReceipts = async (search = '', category = 'All') => {
         setLoading(true);
         try {
-            const res = await api.get(`/receipts?amount=50&search=${search}`);
+            let url = `/receipts?amount=50`;
+            if (search) url += `&search=${search}`;
+            if (category && category !== 'All') url += `&category=${category}`;
+            const res = await api.get(url);
             setReceipts(res.data);
         } catch (e) {
             console.error(e);
@@ -36,26 +43,21 @@ export default function ReceiptGallery() {
     };
 
     const handleSearch = (e) => {
-        setSearchTerm(e.target.value);
-        // Debounce could be added here, currently searching on explicit fetch or logic update
-        // For now let's just search on effect or manual trigger if we had a button, 
-        // but simpler: just filter locally or re-fetch. 
-        // The previous code passed searchTerm to fetchReceipts. 
-        // Let's call fetchReceipts with the new value.
-        fetchReceipts(e.target.value);
+        const val = e.target.value;
+        setSearchTerm(val);
+        fetchReceipts(val, selectedCategory);
     };
-
-    // Better search experience: use a separate effect or just trigger on change
-    // Using onChange directly in input to trigger fetch might be too aggressive without debounce.
-    // Let's stick to the previous pattern or simple local filter if data is small?
-    // The previous pattern called fetchReceipts(searchTerm) in handleSearch (which was on form submit).
-    // Let's make it real-time with debounce or just simple input change for now.
 
     const onSearchChange = (e) => {
         const val = e.target.value;
         setSearchTerm(val);
-        // Simple debounce manually or just fetch
-        fetchReceipts(val);
+        fetchReceipts(val, selectedCategory);
+    };
+
+    const onCategoryChange = (e) => {
+        const val = e.target.value;
+        setSelectedCategory(val);
+        fetchReceipts(searchTerm, val);
     };
 
     const handleDelete = async (id) => {
@@ -80,15 +82,31 @@ export default function ReceiptGallery() {
                     <p className="text-gray-400">Search and manage your digitized receipts.</p>
                 </header>
 
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search merchant or items..."
-                        value={searchTerm}
-                        onChange={onSearchChange}
-                        className="w-full bg-gray-800 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-700 focus:border-blue-500 outline-none"
-                    />
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search merchant or items..."
+                            value={searchTerm}
+                            onChange={onSearchChange}
+                            className="w-full bg-gray-800 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-700 focus:border-blue-500 outline-none"
+                        />
+                    </div>
+
+                    <div className="relative w-full sm:w-48">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                        <select
+                            value={selectedCategory}
+                            onChange={onCategoryChange}
+                            className="w-full bg-gray-800 text-white pl-10 pr-4 py-3 rounded-xl border border-gray-700 focus:border-blue-500 outline-none appearance-none cursor-pointer"
+                        >
+                            {CATEGORIES.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-400 w-0 h-0"></div>
+                    </div>
                 </div>
             </div>
 
@@ -112,7 +130,12 @@ export default function ReceiptGallery() {
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60"></div>
                                 <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
-                                    <span className="text-white font-bold text-lg drop-shadow-md">{receipt.merchant_name}</span>
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-white font-bold text-lg drop-shadow-md leading-none">{receipt.merchant_name}</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded backdrop-blur-md border ${getCategoryColor(receipt.category).badgeClasses} w-fit`}>
+                                            {receipt.category || 'Uncategorized'}
+                                        </span>
+                                    </div>
                                     <span className="text-green-400 font-mono font-bold bg-green-900/80 px-2 py-1 rounded backdrop-blur-sm">
                                         {currencySymbol}{(receipt.total_amount || 0).toFixed(2)}
                                     </span>
