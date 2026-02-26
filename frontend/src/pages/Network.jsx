@@ -46,10 +46,12 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
     const [uploading, setUploading] = useState(false);
 
     const [inviteQuery, setInviteQuery] = useState('');
+    const [trueTotalSpent, setTrueTotalSpent] = useState(0);
 
     useEffect(() => {
         fetchMessages();
         fetchExpenses();
+        fetchSummary();
         connectWS();
         return () => ws.current?.close();
     }, [workspace._id]);
@@ -84,6 +86,14 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
         } catch (e) { console.error(e); }
     };
 
+    const fetchSummary = async () => {
+        try {
+            const res = await api.get(`/expenses/summary?period=all&workspace_id=${workspace._id}`);
+            const total = res.data.reduce((sum, cat) => sum + cat.total, 0);
+            setTrueTotalSpent(total);
+        } catch (e) { console.error(e); }
+    };
+
     const sendMsg = (e) => {
         e.preventDefault();
         if (!newMessage.trim() || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
@@ -113,6 +123,7 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
             });
             setExpForm({ description: '', amount: '', category: '' });
             fetchExpenses();
+            fetchSummary();
         } catch (e) { alert('Error adding expense'); }
         setLoadingExp(false);
     };
@@ -129,6 +140,7 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
             });
             setUploadFile(null);
             fetchExpenses();
+            fetchSummary();
             alert('Receipt uploaded successfully!');
         } catch (e) { alert('Upload failed'); }
         setUploading(false);
@@ -148,7 +160,7 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
         } catch (e) { alert(e.response?.data?.detail || 'Error inviting'); }
     };
 
-    const totalSpent = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalSpent = trueTotalSpent;
     const budgetPct = budget > 0 ? Math.min((totalSpent / budget) * 100, 100) : 0;
     const isOverBudget = totalSpent > budget && budget > 0;
 
@@ -729,7 +741,7 @@ export default function Network() {
                                     <p className="text-gray-500 font-bold">Initialize a new space above to enable shared ledgers.</p>
                                 </div>
                             ) : workspaces.map(w => {
-                                const spent = 0;
+                                const spent = w.total_spent || 0;
                                 const budgetPct = w.budget > 0 ? Math.min((spent / w.budget) * 100, 100) : 0;
                                 return (
                                     <button

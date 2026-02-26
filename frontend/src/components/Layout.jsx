@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Upload, BarChart3, LogOut, Search, Gamepad2, User, Users } from 'lucide-react';
-import WorkspaceSelector from './WorkspaceSelector';
 import ChatWindow from './ChatWindow';
 import { useAuth } from '../context/AuthContext';
 import clsx from 'clsx';
@@ -30,7 +29,6 @@ export default function Layout({ children }) {
                     {/* <p className="text-sm text-gray-400 mt-1">Plan. Track. Win.</p> */}
                 </div>
 
-                <WorkspaceSelector />
 
                 <nav className="flex-1 p-4 space-y-2">
                     {navItems.map((item) => {

@@ -196,3 +196,7 @@
 2026-02-26 12:46:25.669406 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
 2026-02-26 12:48:00.351201 - Starting OCR for file: 9113d2e0-c0af-4729-8b8a-ac95b9c4f1ce.jpg
 2026-02-26 12:48:14.287138 - OCR completed. Merchant: Alico Conforance Pyt. Lt
+2026-02-26 13:32:26.959577 - Starting OCR for file: bba6b336-864a-4c79-ac42-a3ed02ae9241.jpg
+2026-02-26 13:32:28.227982 - Starting model initialization...
+2026-02-26 13:32:48.279925 - Model initialization successful!
+2026-02-26 13:33:09.849004 - OCR completed. Merchant: KICK FUN WORLD PVILTD.

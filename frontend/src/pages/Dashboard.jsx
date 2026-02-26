@@ -38,7 +38,6 @@ import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const { activeWorkspace } = useWorkspace();
   const [stats, setStats] = useState({
     spent: 0,
     budget: 0,
@@ -85,7 +84,7 @@ export default function Dashboard() {
         (acc, curr) => acc + curr.total,
         0
       );
-      const globalBudget = activeWorkspace ? activeWorkspace.budget : (user?.monthly_budget || 0);
+      const globalBudget = (user?.monthly_budget || 0);
       const categoryBudgetTotal = budgetRes.data.reduce(
         (acc, curr) => acc + curr.limit,
         0
@@ -115,7 +114,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) fetchData();
-  }, [user, logout, activeWorkspace]);
+  }, [user, logout]);
 
   // Refetch when month/year changes
   useEffect(() => {
@@ -174,7 +173,7 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              {activeWorkspace ? `Workspace: ${activeWorkspace.name}` : 'Personal Financial Overview'}
+              Personal Financial Overview
             </div>
             <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
               {getGreeting()}, {user?.username}
@@ -235,7 +234,7 @@ export default function Dashboard() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-indigo-200 font-medium mb-1 flex items-center gap-2">
-                        <Wallet size={16} /> {activeWorkspace ? 'Shared Budget' : 'Monthly Budget'}
+                        <Wallet size={16} /> Monthly Budget
                       </p>
                       <h2 className="text-5xl font-bold tracking-tight">
                         {currencySymbol}
@@ -671,7 +670,6 @@ function AIAdvisorModal({ onClose, year, setYear, month, setMonth }) {
 }
 
 function AddExpenseModal({ onClose, refresh, currencySymbol }) {
-  const { activeWorkspace } = useWorkspace();
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
@@ -692,8 +690,7 @@ function AddExpenseModal({ onClose, refresh, currencySymbol }) {
         description: formData.description,
         amount: parseFloat(formData.amount),
         category: formData.category,
-        date: new Date().toISOString(),
-        workspace_id: activeWorkspace ? activeWorkspace._id : null,
+        date: new Date().toISOString()
       });
       refresh();
       onClose();
