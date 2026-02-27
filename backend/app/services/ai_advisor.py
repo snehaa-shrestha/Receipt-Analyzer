@@ -101,7 +101,7 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
         used_model = None
         error_details = []
 
-        # Prepare dense transaction list for LLM context
+        
         # Format: "YYYY-MM-DD: Description (Category) - $Amount"
         tx_list_str = "\n".join([
             f"{t['date'].strftime('%Y-%m-%d') if t['date'] else 'N/A'}: {t['description']} ({t.get('category','Uncat')}) - {t['amount']}"
@@ -156,7 +156,7 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
             try:
                 print(f"[AI] Attempting model: {model_name}")
                 model = genai.GenerativeModel(model_name)
-                response = model.generate_content(prompt)
+                response = model.generate_content(prompt) 
                 advice_text = response.text
                 used_model = model_name
                 print(f"[AI] Success with {model_name}")
