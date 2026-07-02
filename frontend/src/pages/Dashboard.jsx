@@ -180,14 +180,14 @@ export default function Dashboard() {
             </h1>
           </div>
           <div className="flex gap-3">
-            <button
+            {/* <button
               onClick={handleExport}
               disabled={isExporting}
               className="group bg-gray-900/50 hover:bg-gray-800 text-gray-300 border border-gray-700/50 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md disabled:opacity-50"
             >
               {isExporting ? <Activity size={18} className="animate-spin" /> : <Download size={18} className="group-hover:-translate-y-0.5 transition-transform" />}
               <span>{isExporting ? 'Exporting...' : 'Export CSV'}</span>
-            </button>
+            </button> */}
             <button
               onClick={handleAIAdvice}
               className="group bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 backdrop-blur-md"

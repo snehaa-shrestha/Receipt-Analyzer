@@ -2,7 +2,7 @@ import os
 import sys
 
 # Add directory to path
-sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
     from app.utils.security import create_access_token, verify_password, get_password_hash

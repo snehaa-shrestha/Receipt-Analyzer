@@ -60,9 +60,9 @@ export default function Layout({ children }) {
                         </div>
                         <div className="flex-1 overflow-hidden">
                             <p className="truncate font-medium">{user?.username}</p>
-                            <p className="text-xs text-gray-500">Free Plan</p>
+                            {/* <p className="text-xs text-gray-500">Free Plan</p> */}
                         </div>
-                    </div>
+                    </div>  
                     <button
                         onClick={logout}
                         className="flex items-center gap-3 w-full px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"

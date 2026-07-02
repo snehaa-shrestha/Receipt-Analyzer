@@ -131,7 +131,7 @@ export default function UploadReceipt() {
                                     </>
                                 ) : (
                                     <>
-                                        <Receipt size={24} />
+                                        <Receipt size={0} />
                                         <span>Analyze & Extract</span>
                                     </>
                                 )}
@@ -208,7 +208,7 @@ export default function UploadReceipt() {
                         </div>
                     ) : (
                         <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[500px] border-2 border-dashed border-gray-800 rounded-3xl opacity-50">
-                            <Receipt size={64} className="text-gray-700 mb-6" />
+                            <Receipt size={0} className="text-gray-700 mb-6" />
                             <p className="text-gray-500 font-medium text-lg max-w-xs text-center">
                                 Your analysis results will appear here
                             </p>

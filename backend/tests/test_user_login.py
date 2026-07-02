@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import os
-sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 async def test_login():
     from app.database import get_database

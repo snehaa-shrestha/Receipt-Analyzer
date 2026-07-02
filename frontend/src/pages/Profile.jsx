@@ -105,17 +105,6 @@ export default function Profile() {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2 font-medium">Full Name</label>
-                                    <input
-                                        type="text"
-                                        name="full_name"
-                                        value={profile.full_name || ''}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-900 text-white p-4 rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                                        placeholder="e.g. John Doe"
-                                    />
-                                </div>
-                                <div>
                                     <label className="block text-gray-400 text-sm mb-2 font-medium">Display Name (Username)</label>
                                     <input
                                         type="text"
@@ -125,6 +114,18 @@ export default function Profile() {
                                     />
                                     <p className="text-xs text-gray-500 mt-1">Username cannot be changed.</p>
                                 </div>
+                                <div>
+                                    {/* <label className="block text-gray-400 text-sm mb-2 font-medium">Full Name</label>
+                                    <input
+                                        type="text"
+                                        name="full_name"
+                                        value={profile.full_name || ''}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-900 text-white p-4 rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                        placeholder="e.g. John Doe"
+                                    /> */}
+                                </div>
+
                             </div>
                         </div>
 
@@ -158,15 +159,16 @@ export default function Profile() {
                                         <CreditCard size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select
                                             name="currency"
-                                            value={profile.currency || 'USD'}
+                                            value={'NPR'}
                                             onChange={handleChange}
                                             className="w-full bg-gray-900 text-white p-4 pl-12 rounded-xl border border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none appearance-none transition"
                                         >
+                                            <option value="NPR">NPR (Rs) - Nepalese Rupee</option>
                                             <option value="USD">USD ($) - US Dollar</option>
                                             <option value="EUR">EUR (€) - Euro</option>
                                             <option value="GBP">GBP (£) - British Pound</option>
                                             <option value="JPY">JPY (¥) - Japanese Yen</option>
-                                            <option value="NPR">NPR (Rs) - Nepalese Rupee</option>
+
                                         </select>
                                     </div>
                                 </div>
