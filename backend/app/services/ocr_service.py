@@ -9,9 +9,7 @@ import tempfile
 import os
 
 import torch
-# device = torch.device("cpu") # Move inside function
 
-# Global model variable
 model = None
 
 def log_to_file(msg):
@@ -28,7 +26,6 @@ def get_model():
         try:
             device = torch.device("cpu")
             from doctr.models import ocr_predictor
-            # Lazy load model only when actual OCR is requested
             model = ocr_predictor(det_arch='db_resnet50', reco_arch='crnn_vgg16_bn', pretrained=True).to(device)
             log_to_file("Model initialization successful!")
         except Exception as e:
@@ -55,24 +52,20 @@ def deskew(image):
         gray = cv2.bitwise_not(gray)
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
         
-        # Find all non-zero pixels
         coords = np.column_stack(np.where(thresh > 0))
         if len(coords) < 10: # Not enough points to determine angle
             return image
             
         angle = cv2.minAreaRect(coords)[-1]
         
-        # cv2.minAreaRect returns angle in range [-90, 0)
         if angle < -45:
             angle = -(90 + angle)
         else:
             angle = -angle
             
-        # Limit rotation to reasonable receipt angles (-30 to 30 degrees)
         if abs(angle) > 30:
             return image
 
-        # Rotate the image
         (h, w) = image.shape[:2]
         center = (w // 2, h // 2)
         M = cv2.getRotationMatrix2D(center, angle, 1.0)
@@ -95,26 +88,20 @@ def preprocess_image_for_ocr(image_content):
             log_error("Failed to decode image")
             return None
 
-        # Resize for consistency
         height, width = image.shape[:2]
         target_height = 1800
         scale = target_height / height
         image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
 
-        # Deskew
         image = deskew(image)
 
-        # Grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # CLAHE
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
 
-        # Denoising
         denoised = cv2.bilateralFilter(enhanced, 7, 50, 50)
 
-        # Sharpening
         kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
         sharpened = cv2.filter2D(denoised, -1, kernel)
 
@@ -162,7 +149,6 @@ class ReceiptAnalyzer:
         extracted_data['type'] = self._classify_receipt_type(text_blocks)
         extracted_data['confidence_score'] = self._calculate_confidence(extracted_data)
         
-        # Validate and cap the total amount to prevent OCR errors
         MAX_REASONABLE_AMOUNT = 100000  # $100,000 max for receipts
         total_amount = float(extracted_data['amount']) if extracted_data['amount'] else None
         
@@ -190,77 +176,201 @@ class ReceiptAnalyzer:
         return None
 
     def _extract_date_from_text(self, text: str) -> Optional[datetime]:
+        nepali_to_english = {
+            '०': '0', '१': '1', '२': '2', '३': '3', '४': '4',
+            '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+        }
+        for np_char, en_char in nepali_to_english.items():
+            text = text.replace(np_char, en_char)
+
         text = text.replace('O', '0').replace('o', '0').replace('l', '1').replace('I', '1').replace('S', '5')
         
         date_patterns = [
-            r'\d{4}[-/年]\d{1,2}[-/月]\d{1,2}', 
-            r'\d{1,2}[-/]\d{1,2}[-/]\d{4}',
-            r'\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}', 
-            r'\d{4}/\d{1,2}/\d{1,2}'
+            r'\d{1,2}[-/.\s]+[a-zA-Z]{3,9}[-/.\s]+\d{2,4}',
+            r'\d{4}[-/.\s]+[a-zA-Z]{3,9}[-/.\s]+\d{1,2}',
+            r'\d{4}[-/.]\d{1,2}[-/.]\d{1,2}',
+            r'\d{4}[年]\d{1,2}[月]\d{1,2}', 
+            r'\d{1,2}[-/.]\d{1,2}[-/.]\d{4}',
+            r'\d{1,2}[-/.]\d{1,2}[-/.]\d{2}'
         ]
         
         for pattern in date_patterns:
             if match := re.search(pattern, text):
-                try: return self._normalize_date(match.group(0))
-                except: continue
+                try:
+                    parsed_dt = self._normalize_date(match.group(0))
+                    if parsed_dt:
+                        return parsed_dt
+                except:
+                    continue
         return None
 
     def _normalize_date(self, date_str: str) -> Optional[datetime]:
-        date_str = date_str.replace('.', '/').replace('-', '/').replace(' ', '').replace('年', '-').replace('月', '-').replace('日', '')
-        # Prioritize Month/Day/Year (US format) before Day/Month/Year for accurate parsing
-        date_formats = ['%Y/%m/%d', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d', '%m-%d-%Y', '%d-%m-%Y', '%d%b%Y']
-        for fmt in date_formats:
+        date_str = re.sub(r'[-/.\s年]', '/', date_str).replace('月', '/').replace('日', '')
+        parts = [p for p in date_str.split('/') if p]
+        if len(parts) != 3:
+            return None
+
+        month_map = {
+            'jan': '1', 'feb': '2', 'mar': '3', 'apr': '4', 'may': '5', 'jun': '6',
+            'jul': '7', 'aug': '8', 'sep': '9', 'oct': '10', 'nov': '11', 'dec': '12',
+            'january': '1', 'february': '2', 'march': '3', 'april': '4', 'june': '6',
+            'july': '7', 'august': '8', 'september': '9', 'october': '10', 'november': '11', 'december': '12'
+        }
+        
+        exact_month_index = None
+        for i in range(len(parts)):
+            clean_part = parts[i].lower()
+            if clean_part in month_map:
+                parts[i] = month_map[clean_part]
+                exact_month_index = i
+
+        p0, p1, p2 = parts[0], parts[1], parts[2]
+        if not (p0.isdigit() and p1.isdigit() and p2.isdigit()):
+            return None
+
+        val0, val1, val2 = int(p0), int(p1), int(p2)
+        year, month, day = None, None, None
+
+        if len(p0) == 4:
+            year = val0
+            if exact_month_index == 1:
+                month, day = val1, val2
+            elif exact_month_index == 2:
+                month, day = val2, val1
+            else:
+                if 1 <= val1 <= 12 and 1 <= val2 <= 32:
+                    month, day = val1, val2
+                elif 1 <= val2 <= 12 and 1 <= val1 <= 32:
+                    month, day = val2, val1
+
+        elif len(p2) == 4:
+            year = val2
+            if exact_month_index == 0:
+                month, day = val0, val1
+            elif exact_month_index == 1:
+                month, day = val1, val0
+            else:
+                if year > 2028:
+                    if 1 <= val1 <= 12 and 1 <= val0 <= 32:
+                        month, day = val1, val0
+                
+                if not month:
+                    if 1 <= val0 <= 12 and 1 <= val1 <= 32:
+                        month, day = val0, val1
+                    elif 1 <= val1 <= 12 and 1 <= val0 <= 32:
+                        month, day = val1, val0
+
+        else:
+            if 70 <= val0 <= 99:
+                year = val0 + 2000
+                if exact_month_index == 1:
+                    month, day = val1, val2
+                elif exact_month_index == 2:
+                    month, day = val2, val1
+                else:
+                    if 1 <= val1 <= 12 and 1 <= val2 <= 32:
+                        month, day = val1, val2
+            elif 70 <= val2 <= 99:
+                year = val2 + 2000
+                if exact_month_index == 0:
+                    month, day = val0, val1
+                elif exact_month_index == 1:
+                    month, day = val1, val0
+                else:
+                    if 1 <= val1 <= 12 and 1 <= val0 <= 32:
+                        month, day = val1, val0
+            else:
+                year = val2 + 2000
+                if exact_month_index == 0:
+                    month, day = val0, val1
+                elif exact_month_index == 1:
+                    month, day = val1, val0
+                else:
+                    if 1 <= val0 <= 12 and 1 <= val1 <= 32:
+                        month, day = val0, val1
+                    elif 1 <= val1 <= 12 and 1 <= val0 <= 32:
+                        month, day = val1, val0
+
+        if not year or not month or not day:
+            return None
+
+        if 2028 <= year <= 2100:
             try:
-                dt = datetime.strptime(date_str, fmt)
-                if 2028 < dt.year < 2150:
-                    year = dt.year - 57
-                    try: dt = datetime(year, dt.month, dt.day)
-                    except: 
-                        import calendar
-                        last = calendar.monthrange(year, dt.month)[1]
-                        dt = datetime(year, dt.month, min(dt.day, last))
-                return dt
-            except: continue
-        return None
+                import nepali_datetime
+                bs_date = nepali_datetime.date(year, month, day)
+                ad_date = bs_date.to_datetime_date()
+                return datetime(ad_date.year, ad_date.month, ad_date.day)
+            except Exception as e:
+                year_ad = year - 57
+                try:
+                    return datetime(year_ad, month, day)
+                except:
+                    import calendar
+                    last = calendar.monthrange(year_ad, month)[1]
+                    return datetime(year_ad, month, min(day, last))
+        else:
+            if not (1900 <= year <= 2200):
+                return None
+            try:
+                return datetime(year, month, day)
+            except:
+                return None
 
     def _extract_amounts(self, text_blocks: List[str], detected_currency: Optional[str] = None) -> Dict:
         amounts = {'amount': None, 'currency': detected_currency}
-        total_indicators = ['total', 'amount', 'sum', 'due', 'pay', 'balance', 'grand total', 'net']
+        
+        strong_total_indicators = ['net amount', 'grand total', 'net payable', 'total due', 'amount due', 'total payable', 'net total', 'final total']
+        total_indicators = ['total', 'amount', 'sum', 'due', 'pay', 'balance', 'net']
+        exclude_keywords = ['qty', 'quantity', 'items', 'count', 'change', 'tender', 'tendered', 'cash', 'received', 'discount', 'gross', 'subtotal', 'sub total', 'dis ', 'taxable']
+        
         amount_pattern = self._get_amount_pattern()
         all_candidates = []
 
-        # Strategy 1: Look for "Total" keywords near numbers (Standard)
-        for text in reversed(text_blocks):
-            if any(i in text.lower() for i in total_indicators):
-                for match in re.finditer(amount_pattern, text):
-                    val = self._clean_numeric_value(match.group(2))
-                    if val > 0: all_candidates.append((val, match.group(1) or detected_currency, 1.0))
-
-        # Strategy 2: If no keyword found, look for ANY isolated number in bottom 50% of text
-        # (Handwritten receipts often just write the number at the bottom)
-        if not all_candidates:
-            bottom_half = text_blocks[int(len(text_blocks)*0.5):]
-            for text in bottom_half:
-                # Check for isolated numbers or numbers with currency
-                for match in re.finditer(amount_pattern, text):
-                    val = self._clean_numeric_value(match.group(2))
-                    if val > 0 and val < 100000: # Sanity check
-                        # Higher confidence if currency symbol is present
-                        confidence = 0.8 if match.group(1) else 0.6
-                        all_candidates.append((val, match.group(1) or detected_currency, confidence))
-
-        # Strategy 3: Select best candidate (Largest amount usually = Total)
-        if all_candidates:
-            # Sort by Confidence (desc), then Value (desc)
-            # We prefer high confidence, but if confidence is same, take the largest value (assumed to be total)
-            all_candidates.sort(key=lambda x: (x[2], x[0]), reverse=True)
+        for i in range(len(text_blocks)):
+            text = text_blocks[i]
+            text_lower = text.lower()
             
-            # Additional Heuristic: If we have multiple low-confidence numbers, pick the largest one
-            # as it's likely the sum of others.
-            if all_candidates[0][2] < 0.9:
-                 all_candidates.sort(key=lambda x: x[0], reverse=True)
+            if any(k in text_lower for k in exclude_keywords):
+                continue
+                
+            confidence = 0.4
+            if any(k in text_lower for k in strong_total_indicators):
+                confidence = 1.2
+            elif any(k in text_lower for k in total_indicators):
+                confidence = 1.0
 
-            amounts['amount'], amounts['currency'] = str(all_candidates[0][0]), all_candidates[0][1]
+            search_text = text
+            if confidence >= 1.0:
+                for j in range(1, 4):
+                    if i + j < len(text_blocks):
+                        search_text += " " + text_blocks[i+j]
+            
+            for match in re.finditer(amount_pattern, search_text):
+                val = self._clean_numeric_value(match.group(2))
+                if 0 < val < 100000:
+                    all_candidates.append((val, match.group(1) or detected_currency, confidence))
+
+        if not all_candidates:
+            for text in text_blocks:
+                for match in re.finditer(amount_pattern, text):
+                    val = self._clean_numeric_value(match.group(2))
+                    if 0 < val < 100000:
+                        all_candidates.append((val, match.group(1) or detected_currency, 0.2))
+
+        if all_candidates:
+            unique_candidates = {}
+            for val, curr, conf in all_candidates:
+                if val not in unique_candidates or conf > unique_candidates[val][1]:
+                    unique_candidates[val] = (curr, conf)
+            
+            candidates_list = [(val, curr, conf) for val, (curr, conf) in unique_candidates.items()]
+            
+            candidates_list.sort(key=lambda x: (x[2], x[0]), reverse=True)
+            
+            if candidates_list[0][2] <= 0.4:
+                candidates_list.sort(key=lambda x: x[0], reverse=True)
+
+            amounts['amount'], amounts['currency'] = str(candidates_list[0][0]), candidates_list[0][1]
             
         return amounts
 
@@ -268,7 +378,7 @@ class ReceiptAnalyzer:
         s = s.upper().replace('O', '0').replace('D', '0').replace('Q', '0').replace('G', '9')
         s = s.replace('S', '5').replace('Z', '2').replace('T', '7').replace('B', '8')
         s = s.replace('I', '1').replace('L', '1').replace('|', '1')
-        s = s.replace('/-', '').replace('/=', '') # Remove common handwriting suffixes
+        s = s.replace('/-', '').replace('/=', '') 
         s = s.replace(',', '.')
         digits_only = "".join([c for c in s if c.isdigit() or c == '.'])
         
@@ -321,29 +431,22 @@ class ReceiptAnalyzer:
 
     def _extract_items(self, text_blocks: List[str]) -> List[Dict]:
         items = []
-        # Exclude internal headers/footers
         noise_words = ['total', 'subtotal', 'tax', 'date', 'amount', 'due', 'thank', 'visit', 'hscode', 'gst', 'vat', 'net', 'change', 'cash', 'card']
         
-        # Regex to capture: Description ... Price
-        # Improved to be less greedy and capture clean prices at end of line
         pattern = fr'(.*?)\s*({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+[.,]\d{{2}})$'
         
         for text in text_blocks:
-            # Filter out noise lines
             if any(k in text.lower() for k in noise_words): continue
             
-            # Additional check: skip lines that are just dates
             if re.search(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text): continue
 
             if match := re.search(pattern, text):
                 val = self._clean_numeric_value(match.group(3))
                 desc = match.group(1).strip()
                 
-                # Clean description (remove leading "1).", "1.", "*", etc)
                 desc = re.sub(r'^[\d]+\s*[).]*\s*', '', desc)
                 desc = re.sub(r'^[^\w\s]+', '', desc).strip()
 
-                # Validate item price - cap at $10,000 to prevent OCR errors
                 MAX_ITEM_PRICE = 10000
                 if val > 0 and val <= MAX_ITEM_PRICE and len(desc) > 2:
                     items.append({'item_name': desc, 'price': float(val)})
@@ -383,13 +486,9 @@ class ReceiptAnalyzer:
         return re.sub(r'[^\w\s]', '', re.sub(r'\s+', ' ', text.lower().strip()))
 
     def _get_amount_pattern(self) -> str:
-        # Relaxed pattern: Matches currency (optional), then digits, optionally followed by . or , and more digits
-        # Also supports "180/-" style common in handwriting
-        # \d+(?:[.,]\d+)? matches "180", "180.00", "180.5"
-        return fr'({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d+(?:[.,]\d+)?(?:/-)?)'
+        return fr'({"|".join(map(re.escape, self.supported_currencies))})?\s*(\d[0-9.,]*\d(?:/-)?|\d(?:/-)?)'
 
 
-# Initialize global analyzer
 analyzer = ReceiptAnalyzer()
 
 def _extract_text_blocks_from_doctr(result) -> List[str]:
@@ -411,36 +510,30 @@ def extract_text(image_content):
     Main OCR extraction using Doctr (from GitHub repo).
     """
     try:
-        # 1. Preprocess and save to temp file (Doctr requires file path)
         processed_image = preprocess_image_for_ocr(image_content)
         if processed_image is None: 
             return {}
         
-        # Save to temporary file
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             cv2.imwrite(tmp.name, processed_image)
             tmp_path = tmp.name
         
         try:
-            # 2. Run Doctr OCR
             model_instance = get_model()
             doc = DocumentFile.from_images(tmp_path)
             result = model_instance(doc)
             
-            # 3. Extract text blocks
             text_blocks = _extract_text_blocks_from_doctr(result)
             
             print("----- DOCTR OCR OUTPUT -----")
             for l in text_blocks: print(l)
             print("----------------------------")
             
-            # 4. Analyze with ReceiptAnalyzer
             return analyzer.analyze_text(text_blocks)
         except Exception as e:
             log_error("Doctr OCR Model failure", e)
             return {"raw_text": "Error during OCR processing. Check logs."}
         finally:
-            # Clean up temp file
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
 

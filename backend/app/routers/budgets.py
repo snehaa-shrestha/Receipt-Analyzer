@@ -12,7 +12,6 @@ async def create_budget(budget: BudgetSchema, current_user: dict = Depends(get_c
     budget.user_id = user_id
     db = get_database()
     
-    # Check if budget exists for this month/category
     existing = await db.budgets.find_one({
         "user_id": user_id, 
         "category": budget.category,
@@ -43,7 +42,6 @@ async def get_budget_status(
     current_month = month or now.month
     current_year = year or now.year
     
-    # Get all budgets for current month
     budgets = await db.budgets.find({
         "user_id": user_id,
         "month": current_month,
@@ -53,7 +51,6 @@ async def get_budget_status(
     status = []
     
     for b in budgets:
-        # Calculate spent for this category
         pipeline = [
             {
                 "$match": {

@@ -26,7 +26,6 @@ export default function Transactions() {
     const fetchTransactions = async () => {
         setLoading(true);
         try {
-            // Re-using the get expenses endpoint which returns top 100
             const res = await api.get('/expenses/');
             setTransactions(res.data);
         } catch (e) {
@@ -67,7 +66,6 @@ export default function Transactions() {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 p-1">
                     <div>
                         <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
@@ -113,7 +111,6 @@ export default function Transactions() {
                     </div>
                 </div>
 
-                {/* Main Content Area */}
                 <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6 md:p-8 shadow-2xl min-h-[50vh]">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
@@ -127,7 +124,6 @@ export default function Transactions() {
                                     key={tx._id}
                                     className="group flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl bg-gray-900/40 hover:bg-gray-800/60 border border-gray-800 hover:border-gray-600 transition duration-300 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)] gap-4 relative overflow-hidden"
                                 >
-                                    {/* Glass reflection effect on hover */}
                                     <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 ease-in-out pointer-events-none"></div>
 
                                     <div className="flex items-center gap-5 w-full md:w-auto relative z-10">

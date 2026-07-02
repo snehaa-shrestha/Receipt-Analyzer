@@ -29,7 +29,6 @@ async def upload_receipt(
 
     
     try:
-        # Save file
         file_ext = file.filename.split(".")[-1]
         filename = f"{uuid.uuid4()}.{file_ext}"
         filepath = os.path.join(UPLOAD_DIR, filename)
@@ -37,30 +36,23 @@ async def upload_receipt(
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Read file for OCR
         with open(filepath, "rb") as f:
             file_bytes = f.read()
         
         from app.services.ocr_service import log_to_file
         log_to_file(f"Starting OCR for file: {filename}")
             
-        # Run OCR
-        # extract_text now returns a structured dict result directly (ReceiptAnalyzer integration)
         parsed_data = extract_text(file_bytes)
         log_to_file(f"OCR completed. Merchant: {parsed_data.get('merchant_name')}")
         
-        # Categorize Merchant
         merchant = parsed_data.get("merchant_name", "Unknown") or "Unknown"
         detected_category = "Shopping"
         
-        # Simple Keyword Categorization
         m_lower = merchant.lower()
         if any(k in m_lower for k in ['food', 'kitchen', 'restaurant', 'cafe', 'bhat', 'pizza']): detected_category = "Food"
         elif any(k in m_lower for k in ['mart', 'store', 'market', 'grocery', 'kirana']): detected_category = "Groceries"
         elif any(k in m_lower for k in ['fuel', 'petrol', 'taxi', 'ride']): detected_category = "Transport"
         
-        # Enrich items with categories (Prioritize Manual Category if set)
-        # Use manual_category when it's explicitly provided (non-None and non-empty)
         use_category = manual_category.strip() if manual_category and manual_category.strip() else detected_category
         enriched_items = []
         for item in parsed_data.get("items", []):
@@ -71,21 +63,17 @@ async def upload_receipt(
                 "category": use_category
             })
         
-        # Determine date - Prioritize OCR extraction, fallback to manual, then upload date
         final_date = parsed_data.get("date_extracted")
         
-        # If manual date provided and OCR failed, use manual
         if not final_date and manual_date:
             try:
                 final_date = datetime.fromisoformat(manual_date.replace('Z', '+00:00'))
             except:
                 pass
         
-        # Final fallback: use upload date
         if not final_date:
             final_date = datetime.utcnow()
 
-        # Create Receipt Object
         receipt_data = {
             "user_id": current_user["user_id"],
             "workspace_id": workspace_id,
@@ -104,7 +92,6 @@ async def upload_receipt(
         new_receipt = await db.receipts.insert_one(receipt_data)
         receipt_id = str(new_receipt.inserted_id)
  
-        # 2. Insert individual items as Expenses for Analytics
         expense_docs = []
         for item in enriched_items:
             expense_docs.append({
@@ -121,7 +108,6 @@ async def upload_receipt(
         if expense_docs:
             await db.expenses.insert_many(expense_docs)
         elif receipt_data["total_amount"] > 0:
-            # Fallback: If no items parsed but we have a total, create a single expense
             merchant_name = parsed_data.get("merchant_name", "Receipt Total")
             
             await db.expenses.insert_one({
@@ -135,14 +121,15 @@ async def upload_receipt(
                 "created_at": datetime.utcnow()
             })
         
-        # Update parsed_data with the final decided values so frontend sees them
         parsed_data["date_extracted"] = final_date
         parsed_data["merchant_name"] = parsed_data.get("merchant_name") # Keep as is
         
-        # Update Streak (Monthly)
         await update_monthly_streak(current_user["user_id"])
-        
-        
+
+        if workspace_id:
+            from app.routers.chat import manager
+            await manager.broadcast_event(workspace_id, "expense_update", {})
+
         return {
             "message": "Receipt uploaded and processed", 
             "receipt_id": str(new_receipt.inserted_id),
@@ -173,13 +160,9 @@ async def get_receipts(
             raise HTTPException(status_code=403, detail="Not a member of this workspace")
         query = {"workspace_id": workspace_id}
     else:
-        # Personal receipts
         query = {"user_id": current_user["user_id"], "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
     
     if search:
-        # Text search on merchant or raw text
-        # If user also specified workspace search, note that MongoDB ANDs top-level keys
-        # So query will be {user_id: ..., "$or": [...], "category": ...}
         query["$or"] = [
             {"merchant_name": {"$regex": search, "$options": "i"}},
             {"raw_text": {"$regex": search, "$options": "i"}}
@@ -191,7 +174,6 @@ async def get_receipts(
     cursor = db.receipts.find(query).skip(skip).limit(amount).sort("uploaded_at", -1)
     receipts = await cursor.to_list(length=amount)
     
-    # Convert ObjectId to string
     for r in receipts:
         r["_id"] = str(r["_id"])
         
@@ -210,12 +192,10 @@ async def delete_receipt(
     except:
         raise HTTPException(status_code=400, detail="Invalid receipt ID")
         
-    # Find receipt
     receipt = await db.receipts.find_one({"_id": r_oid})
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
         
-    # Check permissions (must be the uploader or admin of the workspace)
     if receipt.get("workspace_id"):
         workspace = await db.workspaces.find_one({"_id": ObjectId(receipt["workspace_id"])})
         is_admin = False
@@ -229,17 +209,14 @@ async def delete_receipt(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
         
-    # 1. Delete associated Image File
     try:
         if receipt.get("image_url") and os.path.exists(receipt["image_url"]):
             os.remove(receipt["image_url"])
     except Exception as e:
         print(f"Error deleting file: {e}")
         
-    # 2. Delete associated Expenses (Cascade)
     await db.expenses.delete_many({"receipt_id": receipt_id})
     
-    # 3. Delete Receipt
     await db.receipts.delete_one({"_id": r_oid})
     
     return {"message": "Receipt and associated data deleted successfully"}

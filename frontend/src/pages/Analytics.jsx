@@ -25,22 +25,17 @@ export default function Analytics() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Summary by Category (for Pie Chart)
                 const summaryRes = await api.get(`/expenses/summary?period=${period}`);
                 setSummary(summaryRes.data);
 
-                // 2. Forecast
                 const forecastRes = await api.get('/expenses/forecast');
                 setForecast(forecastRes.data);
 
-                // 3. Daily Trend Data (Bar Chart)
-                // Pass selectedYear to fetch data for that specific year
                 const expensesRes = await api.get(`/expenses/?year=${selectedYear}`);
 
                 const grouped = {};
                 expensesRes.data.forEach(ex => {
                     const d = new Date(ex.date);
-                    // Check if valid date
                     if (!isNaN(d.getTime())) {
                         const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                         grouped[dateStr] = (grouped[dateStr] || 0) + ex.amount;
@@ -48,7 +43,6 @@ export default function Analytics() {
                 });
 
                 const chartData = Object.keys(grouped).map(date => ({ date, amount: grouped[date] }));
-                // Sort roughly by date (converting string back to date object for sorting)
                 chartData.sort((a, b) => new Date(a.date + ` ${selectedYear}`) - new Date(b.date + ` ${selectedYear}`));
 
                 setDailyData(chartData);
@@ -69,7 +63,6 @@ export default function Analytics() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                {/* Forecast Card (1 col) */}
                 <div className="lg:col-span-1 bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden flex flex-col justify-between">
                     <div className="absolute top-0 right-0 p-24 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
                     <div>
@@ -89,7 +82,6 @@ export default function Analytics() {
                     </div>
                 </div>
 
-                {/* Spending Trend Chart (2 cols) */}
                 <div className="lg:col-span-2 bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -135,7 +127,6 @@ export default function Analytics() {
                 </div>
             </div>
 
-            {/* Category Breakdown (Pie Chart) */}
             <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-lg">
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                     <h3 className="text-xl font-bold text-white flex items-center gap-2">

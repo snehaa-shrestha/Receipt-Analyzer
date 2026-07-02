@@ -54,7 +54,6 @@ export default function Profile() {
             });
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
 
-            // Clear message after 3 seconds
             setTimeout(() => setMessage(null), 3000);
         } catch (e) {
             setMessage({ type: 'error', text: 'Failed to update profile.' });
@@ -73,7 +72,6 @@ export default function Profile() {
                     <p className="text-gray-400">Manage your profile and financial preferences.</p>
                 </header>
 
-                {/* Identity Card */}
                 <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-lg mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
@@ -96,7 +94,6 @@ export default function Profile() {
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid md:grid-cols-2 gap-8">
 
-                        {/* Personal Information */}
                         <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg">
                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                 <User className="text-blue-400" size={24} />
@@ -129,7 +126,6 @@ export default function Profile() {
                             </div>
                         </div>
 
-                        {/* Financial Preferences */}
                         <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg">
                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                 <Wallet className="text-purple-400" size={24} />
@@ -176,7 +172,6 @@ export default function Profile() {
                         </div>
                     </div>
 
-                    {/* Action Bar */}
                     <div className="flex items-center justify-between bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg sticky bottom-6 z-20">
                         <div>
                             {message && (

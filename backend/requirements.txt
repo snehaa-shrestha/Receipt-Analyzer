@@ -16,3 +16,4 @@ requests
 email-validator
 Pillow
 openai
+nepali-datetime

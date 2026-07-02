@@ -6,10 +6,9 @@ import Layout from '../components/Layout';
 import {
     Search, UserPlus, Check, Users, Plus, MessageSquare, Send,
     Wallet, Receipt, Trash2, X, Settings, ArrowLeft, Upload,
-    CheckCircle, Clock, UserCheck, AlertTriangle, ChevronRight, FileImage
+    CheckCircle, Clock, UserCheck, AlertTriangle, ChevronRight, FileImage, Bell, UserX
 } from 'lucide-react';
 
-// ─── Sub-Components ─────────────────────────────────────────────────────────
 
 function StatBadge({ label, value, color }) {
     const colors = {
@@ -26,7 +25,6 @@ function StatBadge({ label, value, color }) {
     );
 }
 
-// ─── Workspace Detail Panel ─────────────────────────────────────────────────
 function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUser }) {
     const [tab, setTab] = useState('chat');
     const [messages, setMessages] = useState([]);
@@ -68,7 +66,15 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
         ws.current = new WebSocket(url);
         ws.current.onmessage = (e) => {
             const data = JSON.parse(e.data);
-            setMessages(prev => [...prev, data]);
+            if (data.type === 'chat') {
+                setMessages(prev => [...prev, data]);
+            } else if (data.type === 'budget_update') {
+                setBudget(data.budget);
+                setBudgetInput(data.budget);
+            } else if (data.type === 'expense_update') {
+                fetchExpenses();
+                fetchSummary();
+            }
         };
     };
 
@@ -174,11 +180,9 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
             <div className="bg-gray-900/90 w-full max-w-4xl h-[90vh] rounded-[2rem] border border-gray-700/50 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden relative">
-                {/* Header glow */}
                 <div className="absolute top-0 left-1/4 right-1/4 h-32 bg-blue-500/20 blur-[100px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-purple-500/10 blur-[100px] pointer-events-none"></div>
 
-                {/* Header */}
                 <div className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6 flex items-center justify-between border-b border-gray-800 flex-shrink-0 z-10">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg ring-2 ring-purple-500/20">
@@ -197,7 +201,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                     </button>
                 </div>
 
-                {/* Budget bar (always visible) */}
                 {budget > 0 && (
                     <div className={`px-8 py-4 flex-shrink-0 relative z-10 shadow-inner ${isOverBudget ? 'bg-red-950/30' : 'bg-gray-900/50'}`}>
                         <div className="flex justify-between items-end mb-2">
@@ -217,7 +220,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                     </div>
                 )}
 
-                {/* Tabs */}
                 <div className="flex px-4 pt-4 border-b border-gray-800 flex-shrink-0 bg-gray-900/30 relative z-10">
                     {tabs.map(t => {
                         const Icon = t.icon;
@@ -240,10 +242,8 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                     })}
                 </div>
 
-                {/* Tab Content */}
                 <div className="flex-1 overflow-hidden flex flex-col relative z-10">
 
-                    {/* ── CHAT TAB ─────────────── */}
                     {tab === 'chat' && (
                         <div className="flex-1 flex flex-col h-full bg-gray-900/40">
                             <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
@@ -286,10 +286,8 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                         </div>
                     )}
 
-                    {/* ── BUDGET & EXPENSES TAB ─── */}
                     {tab === 'budget' && (
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-900/40 custom-scrollbar">
-                            {/* Budget Setting */}
                             <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 flex items-center gap-2 text-lg">
@@ -323,7 +321,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                                {/* Add Expense */}
                                 <div className="lg:col-span-2 bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl h-fit">
                                     <h3 className="font-extrabold text-white mb-5 flex items-center gap-2 text-lg">
                                         <Plus size={20} className="text-blue-400" /> Log Expense
@@ -358,7 +355,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                                     </form>
                                 </div>
 
-                                {/* Expense List */}
                                 <div className="lg:col-span-3 bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl overflow-hidden flex flex-col h-[400px]">
                                     <h3 className="font-extrabold text-white mb-4 flex items-center justify-between">
                                         Recent Incurred Costs
@@ -390,7 +386,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                         </div>
                     )}
 
-                    {/* ── RECEIPT UPLOAD TAB ──── */}
                     {tab === 'receipts' && (
                         <div className="flex-1 overflow-y-auto p-6 bg-gray-900/40">
                             <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-8 border border-gray-700/50 shadow-2xl max-w-2xl mx-auto relative overflow-hidden group">
@@ -451,7 +446,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
                         </div>
                     )}
 
-                    {/* ── MEMBERS TAB ──────────── */}
                     {tab === 'members' && (
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-900/40 custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -507,7 +501,6 @@ function WorkspacePanel({ workspace, onClose, connections, onRefresh, currentUse
     );
 }
 
-// ─── Main Network Page ───────────────────────────────────────────────────────
 export default function Network() {
     const { user } = useAuth();
     const { workspaces, fetchWorkspaces } = useWorkspace();
@@ -519,13 +512,44 @@ export default function Network() {
     const [selectedWorkspace, setSelectedWorkspace] = useState(null);
     const [activeSection, setActiveSection] = useState('friends');
 
-    useEffect(() => { fetchConnections(); }, []);
+    const [pendingRequests, setPendingRequests] = useState([]);
+    const pollRef = useRef(null);
+
+    const fetchPending = async () => {
+        try {
+            const res = await api.get(`/social/pending?t=${Date.now()}`);
+            const mapped = res.data.map(req => ({
+                id: req.id,
+                username: req.username,
+                email: req.email,
+                connection_status: 'pending',
+                is_sender: false
+            }));
+            setPendingRequests(mapped);
+        } catch (e) { console.error(e); }
+    };
+
+    useEffect(() => {
+        fetchConnections();
+        fetchPending();
+        pollRef.current = setInterval(fetchPending, 3000);
+        return () => clearInterval(pollRef.current);
+    }, []);
 
     const fetchConnections = async () => {
         try {
             const res = await api.get('/social/connections');
             setConnections(res.data);
         } catch (e) { console.error(e); }
+    };
+
+    const handleUnfriend = async (friendId, username) => {
+        if (!window.confirm(`Remove ${username} from your connections?`)) return;
+        try {
+            await api.delete(`/social/connections/${friendId}`);
+            await fetchConnections();
+            if (searchResults.length > 0) handleSearch({ preventDefault: () => {} });
+        } catch (e) { alert(e.response?.data?.detail || 'Error removing connection'); }
     };
 
     const handleSearch = async (e) => {
@@ -548,8 +572,17 @@ export default function Network() {
         try {
             await api.put(`/social/connect/${id}/accept`);
             fetchConnections();
-            handleSearch({ preventDefault: () => { } });
+            fetchPending();
+            if (searchQuery.length >= 2) handleSearch({ preventDefault: () => { } });
         } catch (e) { alert(e.response?.data?.detail || 'Error accepting'); }
+    };
+
+    const cancelRequest = async (id) => {
+        try {
+            await api.delete(`/social/connect/${id}`);
+            fetchPending();
+            if (searchQuery.length >= 2) handleSearch({ preventDefault: () => { } });
+        } catch (e) { alert(e.response?.data?.detail || 'Error cancelling'); }
     };
 
     const handleCreateWorkspace = async (e) => {
@@ -569,7 +602,6 @@ export default function Network() {
         try {
             await api.delete(`/workspaces/${workspaceId}`);
 
-            // If the deleted workspace is the currently active one, clear it
             const activeWorkspaceId = localStorage.getItem('activeWorkspace');
             if (activeWorkspaceId === workspaceId) {
                 localStorage.removeItem('activeWorkspace');
@@ -612,7 +644,6 @@ export default function Network() {
                     </div>
                 </div>
 
-                {/* ── FRIENDS SECTION ─── */}
                 {activeSection === 'friends' && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10 animate-in slide-in-from-bottom-4 duration-500">
                         <div className="bg-gray-800/40 backdrop-blur-xl p-8 rounded-[2rem] border border-gray-700/50 shadow-2xl relative overflow-hidden group/panel">
@@ -636,9 +667,18 @@ export default function Network() {
                             </div>
 
                             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 relative z-10 custom-scrollbar">
-                                {searchResults.length === 0 ? (
-                                    <p className="text-gray-500 font-medium text-center py-10 opacity-70">Execute a query query to find network participants.</p>
-                                ) : searchResults.map(u => (
+                                {searchQuery.length < 2 && pendingRequests.length > 0 && (
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-2 flex items-center gap-2">
+                                        <Bell size={14} className="text-red-400" /> Pending Requests
+                                    </p>
+                                )}
+                                {searchQuery.length < 2 && pendingRequests.length === 0 && (
+                                    <p className="text-gray-500 font-medium text-center py-10 opacity-70">Search for users to connect with.</p>
+                                )}
+                                {searchQuery.length >= 2 && searchResults.length === 0 && (
+                                    <p className="text-gray-500 font-medium text-center py-10 opacity-70">No users found for "{searchQuery}".</p>
+                                )}
+                                {(searchQuery.length < 2 ? pendingRequests : searchResults).map(u => (
                                     <div key={u.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-gray-900/40 hover:bg-gray-800/80 rounded-2xl border border-gray-800 hover:border-blue-500/30 transition-all shadow-sm gap-4">
                                         <div className="flex items-center gap-4 w-full sm:w-auto">
                                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 p-[1px] shadow-lg flex-shrink-0">
@@ -659,12 +699,22 @@ export default function Network() {
                                                 </button>
                                             )}
                                             {u.connection_status === 'pending' && u.is_sender && (
-                                                <span className="text-xs text-gray-400 flex items-center gap-2 font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl shadow-inner"><Clock size={16} /> Pending</span>
+                                                <div className="flex gap-2">
+                                                    <span className="text-xs text-gray-400 flex items-center gap-2 font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl shadow-inner"><Clock size={16} /> Pending</span>
+                                                    <button onClick={() => cancelRequest(u.id)} title="Cancel request" className="text-xs font-black bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-transparent text-red-400 hover:text-white px-3 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-inner">
+                                                        <X size={14} /> Cancel
+                                                    </button>
+                                                </div>
                                             )}
                                             {u.connection_status === 'pending' && !u.is_sender && (
-                                                <button onClick={() => acceptRequest(u.id)} className="w-full sm:w-auto text-xs font-black tracking-widest uppercase bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/20 hover:border-transparent text-emerald-400 hover:text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-inner hover:shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                                                    <Check size={16} /> Accept
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => acceptRequest(u.id)} className="text-xs font-black tracking-widest uppercase bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/20 hover:border-transparent text-emerald-400 hover:text-white px-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-inner hover:shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                                                        <Check size={16} /> Accept
+                                                    </button>
+                                                    <button onClick={() => cancelRequest(u.id)} title="Reject" className="text-xs font-black bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-transparent text-red-400 hover:text-white px-3 py-3 rounded-xl flex items-center gap-1.5 transition-all shadow-inner">
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
                                             )}
                                             {u.connection_status === 'accepted' && (
                                                 <span className="text-xs text-emerald-400 flex items-center gap-2 font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl shadow-inner"><CheckCircle size={16} /> Verified</span>
@@ -703,7 +753,15 @@ export default function Network() {
                                             <p className="font-extrabold text-white text-lg truncate tracking-tight">{c.username}</p>
                                             <p className="text-xs text-gray-400 truncate font-semibold">{c.email}</p>
                                         </div>
-                                        <span className="hidden sm:inline-flex text-[10px] uppercase font-black tracking-widest text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg shadow-inner">Secured</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="hidden sm:inline-flex text-[10px] uppercase font-black tracking-widest text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg shadow-inner group-hover:hidden">Connected</span>
+                                            <button
+                                                onClick={() => handleUnfriend(c.id, c.username)}
+                                                className="hidden group-hover:inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-transparent hover:text-white px-3 py-1.5 rounded-lg transition-all shadow-inner hover:shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                                            >
+                                                <UserX size={13} /> Unfriend
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -711,7 +769,6 @@ export default function Network() {
                     </div>
                 )}
 
-                {/* ── WORKSPACES SECTION ─── */}
                 {activeSection === 'workspaces' && (
                     <div className="space-y-8 relative z-10 animate-in slide-in-from-bottom-4 duration-500">
                         <div className="bg-gray-800/40 backdrop-blur-xl p-8 rounded-[2rem] border border-gray-700/50 shadow-2xl relative overflow-hidden group">

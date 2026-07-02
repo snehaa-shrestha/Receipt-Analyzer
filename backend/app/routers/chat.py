@@ -30,11 +30,37 @@ class ConnectionManager:
             return
         import json
         payload = {
+            "type": "chat",
             "workspace_id": workspace_id,
             "text": message,
             "timestamp": datetime.utcnow().isoformat(),
             "sender_id": sender_id or "",
             "sender_name": sender_name or "",
+        }
+        json_payload = json.dumps(payload)
+        dead = []
+        for connection in list(self.active_connections.get(workspace_id, [])):
+            try:
+                await connection.send_text(json_payload)
+            except Exception:
+                dead.append(connection)
+        for d in dead:
+            try:
+                self.active_connections[workspace_id].remove(d)
+            except ValueError:
+                pass
+
+    async def broadcast_event(self, workspace_id: str, event_type: str, extra: dict = None):
+        """Broadcast a typed non-chat event (e.g. budget_update, expense_update)
+        to all WebSocket connections in the given workspace."""
+        if workspace_id not in self.active_connections:
+            return
+        import json
+        payload = {
+            "type": event_type,
+            "workspace_id": workspace_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            **(extra or {}),
         }
         json_payload = json.dumps(payload)
         dead = []
@@ -88,7 +114,6 @@ async def websocket_endpoint(websocket: WebSocket, workspace_id: str, token: str
         while True:
             data = await websocket.receive_text()
 
-            # Persist message to MongoDB
             message_doc = {
                 "workspace_id": workspace_id,
                 "sender_id": user["user_id"],
@@ -98,7 +123,6 @@ async def websocket_endpoint(websocket: WebSocket, workspace_id: str, token: str
             }
             await db.messages.insert_one(message_doc)
 
-            # Broadcast to all connected clients in this workspace
             await manager.broadcast_to_workspace(
                 message=data,
                 workspace_id=workspace_id,

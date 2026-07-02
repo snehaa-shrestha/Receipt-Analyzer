@@ -15,7 +15,6 @@ async def search_users(
 ):
     """Search for users by username or email"""
     db = get_database()
-    # Find active non-deleted users matching query
     search_regex = {"$regex": query, "$options": "i"}
     users_cursor = db.users.find({
         "$and": [
@@ -26,7 +25,6 @@ async def search_users(
     
     users = await users_cursor.to_list(length=20)
     
-    # Check connection status for each user found
     results = []
     for u in users:
         conn = await db.connections.find_one({
@@ -54,12 +52,10 @@ async def send_connection_request(friend_id: str, current_user: dict = Depends(g
     if friend_id == current_user["user_id"]:
         raise HTTPException(status_code=400, detail="Cannot connect with yourself")
         
-    # Check if friend exists
     friend = await db.users.find_one({"_id": ObjectId(friend_id)})
     if not friend:
         raise HTTPException(status_code=404, detail="User not found")
         
-    # Check existing connection
     existing = await db.connections.find_one({
         "$or": [
             {"user_id": current_user["user_id"], "friend_id": friend_id},
@@ -82,7 +78,6 @@ async def send_connection_request(friend_id: str, current_user: dict = Depends(g
 @router.put("/connect/{friend_id}/accept")
 async def accept_connection(friend_id: str, current_user: dict = Depends(get_current_user)):
     db = get_database()
-    # The request must have been sent BY the friend TO the current user
     result = await db.connections.update_one(
         {"user_id": friend_id, "friend_id": current_user["user_id"], "status": "pending"},
         {"$set": {"status": "accepted"}}
@@ -91,20 +86,78 @@ async def accept_connection(friend_id: str, current_user: dict = Depends(get_cur
         raise HTTPException(status_code=404, detail="Pending request not found")
     return {"message": "Connection accepted"}
 
+@router.get("/pending")
+async def get_pending_requests(current_user: dict = Depends(get_current_user)):
+    """Return all incoming connection requests (where current user is the recipient)."""
+    db = get_database()
+    user_id = current_user["user_id"]
+
+    pending = await db.connections.find({
+        "friend_id": user_id,
+        "status": "pending"
+    }).to_list(length=100)
+
+    results = []
+    for conn in pending:
+        sender = await db.users.find_one(
+            {"_id": ObjectId(conn["user_id"])},
+            {"password": 0}
+        )
+        if sender:
+            results.append({
+                "id": str(sender["_id"]),
+                "username": sender.get("username"),
+                "email": sender.get("email"),
+                "requested_at": conn.get("created_at", "").isoformat() if hasattr(conn.get("created_at", ""), "isoformat") else str(conn.get("created_at", "")),
+            })
+
+    return results
+
+
+@router.delete("/connect/{friend_id}")
+async def reject_or_cancel_connection(friend_id: str, current_user: dict = Depends(get_current_user)):
+    """Reject an incoming request OR cancel an outgoing pending request."""
+    db = get_database()
+    result = await db.connections.delete_one({
+        "status": "pending",
+        "$or": [
+            {"user_id": friend_id, "friend_id": current_user["user_id"]},
+            {"user_id": current_user["user_id"], "friend_id": friend_id},
+        ]
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pending request not found")
+    return {"message": "Connection request removed"}
+
+
 @router.get("/connections")
 async def get_connections(current_user: dict = Depends(get_current_user)):
     db = get_database()
     user_id = current_user["user_id"]
     
-    # Fetch where status is accepted and user is either user_id or friend_id
     conns = await db.connections.find({
         "status": "accepted",
         "$or": [{"user_id": user_id}, {"friend_id": user_id}]
     }).to_list(length=1000)
     
-    # We need friend details
     friend_ids = [ObjectId(c["friend_id"] if c["user_id"] == user_id else c["user_id"]) for c in conns]
     
     friends = await db.users.find({"_id": {"$in": friend_ids}}, {"password": 0}).to_list(length=1000)
     
     return [{"id": str(f["_id"]), "username": f.get("username"), "email": f.get("email")} for f in friends]
+
+
+@router.delete("/connections/{friend_id}")
+async def unfriend(friend_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove an accepted connection (unfriend) between the current user and friend_id."""
+    db = get_database()
+    result = await db.connections.delete_one({
+        "status": "accepted",
+        "$or": [
+            {"user_id": current_user["user_id"], "friend_id": friend_id},
+            {"user_id": friend_id, "friend_id": current_user["user_id"]},
+        ]
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return {"message": "Connection removed"}

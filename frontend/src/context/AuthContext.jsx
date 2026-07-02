@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
         const res = await api.post('/auth/login', { username, password });
         localStorage.setItem('token', res.data.access_token);
 
-        // Fetch full profile immediately
         const profileRes = await api.get('/users/me');
         setUser({ ...profileRes.data, token: res.data.access_token });
 

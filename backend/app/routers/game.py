@@ -13,7 +13,6 @@ async def get_progress(current_user: dict = Depends(get_current_user)):
     user_id = current_user["user_id"]
     db = get_database()
     
-    # Calculate quests and update DB if needed
     active_quests, points = await check_and_update_quests(user_id)
     
     user = await db.users.find_one({"_id": ObjectId(user_id)})

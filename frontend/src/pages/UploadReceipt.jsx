@@ -51,7 +51,6 @@ export default function UploadReceipt() {
     return (
         <Layout>
             <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
-                {/* Header Section */}
                 <div className="p-1">
                     <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
@@ -63,12 +62,10 @@ export default function UploadReceipt() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-                    {/* Upload Card */}
                     <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6 md:p-8 shadow-2xl relative overflow-hidden group/card">
                         <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
 
                         <div className="relative z-10 space-y-6">
-                            {/* Dropzone */}
                             <div className="relative group cursor-pointer border-2 border-dashed border-gray-600 hover:border-blue-500 rounded-2xl flex flex-col items-center justify-center min-h-[320px] bg-gray-900/40 hover:bg-gray-800/40 transition-all duration-300 overflow-hidden shadow-inner">
                                 {preview ? (
                                     <div className="absolute inset-0 p-4 flex items-center justify-center bg-black/40 backdrop-blur-sm group-hover:bg-black/20 transition duration-300">
@@ -95,7 +92,6 @@ export default function UploadReceipt() {
                                 />
                             </div>
 
-                            {/* Category Selector */}
                             <div className="space-y-2">
                                 <label className="flex items-center justify-between text-sm font-bold text-gray-300 uppercase tracking-wider">
                                     <span className="flex items-center gap-2"><Tag size={16} className="text-blue-400" /> Primary Category</span>
@@ -117,7 +113,6 @@ export default function UploadReceipt() {
                                 </div>
                             </div>
 
-                            {/* Action Button */}
                             <button
                                 onClick={handleUpload}
                                 disabled={!file || !manualCategory || loading}
@@ -146,7 +141,6 @@ export default function UploadReceipt() {
                         </div>
                     </div>
 
-                    {/* Results Section */}
                     {result ? (
                         <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8 shadow-2xl animate-in slide-in-from-right-8 duration-500 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
@@ -167,12 +161,12 @@ export default function UploadReceipt() {
                                             {result.parsed_data.merchant_name || 'Unknown Merchant'}
                                         </p>
                                     </div>
-                                    <div className="text-right">
+                                    {/* <div className="text-right">
                                         <label className="text-gray-500 text-sm font-bold uppercase tracking-wider block mb-2">Category</label>
                                         <span className={`px-3 py-1.5 rounded-lg border font-bold text-sm ${getCategoryColor(result.parsed_data.category).badgeClasses}`}>
                                             {result.parsed_data.category || 'Uncategorized'}
                                         </span>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">

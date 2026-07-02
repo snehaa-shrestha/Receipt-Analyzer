@@ -21,7 +21,6 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
         print("[AI] Initializing Gemini Service...")
         db = get_database()
         
-        # 1. Determine Date Range
         if year and month:
             start_date = datetime(year, month, 1)
             if month == 12: end_date = datetime(year + 1, 1, 1)
@@ -31,24 +30,19 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
             period_str = f"{datetime(year, month, 1).strftime('%B %Y')}"
             print(f"[AI] Fetching data for period: {period_str}")
         else:
-            # Default: Last 30 days
             start_date = datetime.utcnow() - timedelta(days=30)
             date_filter = {"$gte": start_date}
             period_str = "Last 30 Days"
             print(f"[AI] Fetching data for period: {period_str}")
         
-        # 2. Fetch Data (Receipts + Manual Expenses)
-        # Receipts
         receipt_query = {"user_id": user_id, "date_extracted": date_filter}
         receipts = await db.receipts.find(receipt_query).to_list(length=1000)
         
-        # Manual Expenses
         expense_query = {"user_id": user_id, "receipt_id": None, "date": date_filter}
         manual = await db.expenses.find(expense_query).to_list(length=1000)
         
         print(f"[AI] Found {len(receipts)} receipts and {len(manual)} manual expenses.")
 
-        # Combine data
         transactions = []
         for r in receipts:
             transactions.append({
@@ -65,17 +59,14 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
                 "category": e.get("category", "Uncategorized")
             })
             
-        # Stats
         total_spent = sum(t["amount"] for t in transactions)
         count = len(transactions)
         
-        # Category Breakdown
         categories = {}
         for t in transactions:
             cat = t.get("category", "Uncategorized")
             categories[cat] = categories.get(cat, 0) + t.get("amount", 0)
             
-        # 3. Check for API Key
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             print("[AI] No API Key found.")
@@ -84,11 +75,9 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
                 "mock": True
             }
             
-        # 4. Call Gemini with Fallback
         print("[AI] Sending data to Gemini...")
         genai.configure(api_key=api_key)
         
-        # List of models to try in order of preference
         models_to_try = [
             'gemini-2.5-flash',       
             'gemini-1.5-flash',       
@@ -102,7 +91,6 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
         error_details = []
 
         
-        # Format: "YYYY-MM-DD: Description (Category) - $Amount"
         tx_list_str = "\n".join([
             f"{t['date'].strftime('%Y-%m-%d') if t['date'] else 'N/A'}: {t['description']} ({t.get('category','Uncat')}) - {t['amount']}"
             for t in transactions[:500] # Pass up to 500 recent transactions as context

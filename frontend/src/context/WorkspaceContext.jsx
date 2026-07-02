@@ -50,7 +50,6 @@ export const WorkspaceProvider = ({ children }) => {
         } else {
             localStorage.removeItem('activeWorkspace');
         }
-        // Small reload helps reset all data hooks on the current page safely
         window.location.reload();
     };
 

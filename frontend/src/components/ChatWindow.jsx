@@ -14,7 +14,6 @@ export default function ChatWindow() {
     const ws = useRef(null);
     const messagesEndRef = useRef(null);
 
-    // Fetch history and connect WS when workspace changes
     useEffect(() => {
         if (!activeWorkspace) {
             setIsOpen(false);
@@ -39,7 +38,6 @@ export default function ChatWindow() {
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            // Close existing connection if any
             if (ws.current) ws.current.close();
 
             const wsUrl = `ws://localhost:8000/api/chat/ws/${activeWorkspace._id}?token=${token}`;
@@ -86,21 +84,17 @@ export default function ChatWindow() {
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-            {/* Chat Toggle Button */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl transition flex items-center justify-center relative group"
                 >
                     <MessageSquare size={24} />
-                    {/* Optional: unread indicator here */}
                 </button>
             )}
 
-            {/* Chat Panel */}
             {isOpen && (
                 <div className="w-80 md:w-96 h-[500px] bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5">
-                    {/* Header */}
                     <div className="bg-gray-700 p-4 flex justify-between items-center border-b border-gray-600">
                         <div className="flex items-center gap-2">
                             <MessageSquare size={18} className="text-blue-400" />
@@ -111,7 +105,6 @@ export default function ChatWindow() {
                         </button>
                     </div>
 
-                    {/* Messages Area */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {messages.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-gray-500 text-sm">
@@ -140,7 +133,6 @@ export default function ChatWindow() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input Area */}
                     <form onSubmit={sendMessage} className="p-3 bg-gray-900 border-t border-gray-700 flex gap-2">
                         <input
                             type="text"

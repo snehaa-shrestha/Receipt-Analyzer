@@ -6,7 +6,6 @@ from app.database import get_database
 async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
     db = get_database()
     
-    # Base match logic based on workspace
     base_match = {}
     if workspace_id:
         from bson import ObjectId
@@ -17,8 +16,6 @@ async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
     else:
         base_match = {"user_id": user_id, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
         
-    # 1. Fetch Expenses (Last 12 months)
-    # merged logic: Get Receipts + Manual Expenses (receipt_id=None)
     receipts = await db.receipts.find({**base_match}).to_list(length=5000)
     manual_expenses = await db.expenses.find({**base_match, "receipt_id": None}).to_list(length=5000)
     
@@ -39,9 +36,12 @@ async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
         return {"predicted_amount": 0.0, "advice": "Start tracking expenses to see AI forecasts!"}
 
     df = pd.DataFrame(data)
-    df['date'] = pd.to_datetime(df['date'])
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df = df.dropna(subset=['date'])
     
-    # 2. Add Current Month Projection
+    if df.empty:
+        return {"predicted_amount": 0.0, "advice": "Not enough valid expense dates to forecast."}
+
     now = datetime.utcnow()
     current_month_start = datetime(now.year, now.month, 1)
     days_in_current_month = (current_month_start.replace(month=now.month % 12 + 1) - timedelta(days=1)).day
@@ -49,39 +49,25 @@ async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
     
     current_month_expenses = df[df['date'] >= current_month_start]['amount'].sum()
     
-    # Calculate "Velocity" (Spending per day)
     current_velocity = current_month_expenses / days_passed
     projected_current_month = current_velocity * days_in_current_month
     
-    # 3. Analyze Historical Momentum (Past 3-6 months)
-    # We treat spending as a 'moving object' with momentum
     df['month_key'] = df['date'].dt.to_period('M')
     monthly_totals = df.groupby('month_key')['amount'].sum().sort_index()
     
-    # Filter out current partial month from history to avoid skewing
-    # history = monthly_totals[monthly_totals.index < pd.Period(now, freq='M')]
-    # Use string comparison to be safe with different pandas versions
     current_period = pd.Period(now, freq='M')
     history = monthly_totals[monthly_totals.index < current_period]
     
     if len(history) < 2:
-        # Not enough history for momentum, use pure current velocity projection
         prediction = projected_current_month
         msg = "Based on your current daily spending velocity."
     else:
-        # Calculate Weighted Moving Average (Momentum)
-        # Give more weight to recent months (Physics: recent force has more impact)
         recent_months = history.tail(3)
         weights = np.arange(1, len(recent_months) + 1)
         weighted_avg = np.average(recent_months.values, weights=weights)
         
-        # Combine projected current month with historical momentum
-        # If we are effectively AT the end of the month, current velocity is truth.
-        # If early in month, rely more on history.
         progress_ratio = min(1.0, days_passed / days_in_current_month)
         
-        # Formula: Prediction = (Current Projection * weight) + (Historical Momentum * weight)
-        # As month progresses, 'Current Projection' gains 'mass' (reliability)
         prediction = (projected_current_month * progress_ratio) + (weighted_avg * (1 - progress_ratio))
         msg = "Calculated using spending momentum and current velocity."
 

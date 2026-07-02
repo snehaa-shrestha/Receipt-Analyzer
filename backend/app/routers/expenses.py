@@ -25,6 +25,11 @@ async def create_expense(expense: ExpenseSchema, current_user: dict = Depends(ge
         
     db = get_database()
     new_expense = await db.expenses.insert_one(expense.model_dump())
+
+    if expense.workspace_id:
+        from app.routers.chat import manager
+        await manager.broadcast_event(expense.workspace_id, "expense_update", {})
+
     return {"message": "Expense added", "id": str(new_expense.inserted_id)}
 
 @router.get("/")
@@ -50,9 +55,11 @@ async def get_expenses(
             raise HTTPException(status_code=403, detail="Not a member of this workspace")
         base_match = {"workspace_id": workspace_id}
     else:
-        base_match = {"user_id": user_id, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
+        base_match = {
+            "user_id": user_id,
+            "$or": [{"workspace_id": {"$exists": False}}, {"workspace_id": None}]
+        }
     
-    # Date Filtering
     date_query = {}
     limit = 100 # default limit for recent
     
@@ -66,15 +73,19 @@ async def get_expenses(
             end_date = datetime(year + 1, 1, 1)
         date_query = {"$gte": start_date, "$lt": end_date}
     
-    # 1. Fetch Receipts
     receipt_match = {**base_match}
-    if date_query: receipt_match["date_extracted"] = date_query
+    if date_query:
+        date_or = {"$or": [
+            {"date_extracted": date_query},
+            {"date_extracted": {"$exists": False}, "uploaded_at": date_query},
+            {"date_extracted": None, "uploaded_at": date_query},
+        ]}
+        receipt_match = {"$and": [{**base_match}, date_or]}
     
     r_cursor = db.receipts.find(receipt_match).sort("date_extracted", -1)
     if limit > 0: r_cursor = r_cursor.limit(limit)
     receipts = await r_cursor.to_list(length=None) # length=None is safe here as mongo driver handles it, or pass 10000
     
-    # 2. Fetch Manual Expenses
     expense_match = {"receipt_id": None, **base_match}
     if date_query: expense_match["date"] = date_query
     
@@ -85,7 +96,6 @@ async def get_expenses(
     combined = []
     
     for r in receipts:
-        # Prefer top-level category, fall back to items, then default
         items = r.get("items", [])
         receipt_category = r.get("category") or (items[0].get("category", "Shopping") if items else "Shopping")
         combined.append({
@@ -109,10 +119,8 @@ async def get_expenses(
             "receipt_id": None
         })
         
-    # Sort by date
     combined.sort(key=lambda x: x["date"] if x["date"] else datetime.min, reverse=True)
     
-    # If no filter was applied, maybe we still want to limit total combined?
     if limit > 0:
         combined = combined[:limit]
         
@@ -139,9 +147,11 @@ async def get_recent_transactions(
             raise HTTPException(status_code=403, detail="Not a member of this workspace")
         base_match = {"workspace_id": workspace_id}
     else:
-        base_match = {"user_id": user_id, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
+        base_match = {
+            "user_id": user_id,
+            "$or": [{"workspace_id": {"$exists": False}}, {"workspace_id": None}]
+        }
     
-    # Date Filtering
     date_query = {}
     if year and month:
         start_date = datetime(year, month, 1)
@@ -149,13 +159,17 @@ async def get_recent_transactions(
         else: end_date = datetime(year, month + 1, 1)
         date_query = {"$gte": start_date, "$lt": end_date}
     
-    # 1. Fetch Receipts (using date_extracted or uploaded_at)
     receipt_match = {**base_match}
-    if date_query: receipt_match["date_extracted"] = date_query
+    if date_query:
+        date_or = {"$or": [
+            {"date_extracted": date_query},
+            {"date_extracted": {"$exists": False}, "uploaded_at": date_query},
+            {"date_extracted": None, "uploaded_at": date_query},
+        ]}
+        receipt_match = {"$and": [{**base_match}, date_or]}
     
     receipts = await db.receipts.find(receipt_match).sort("date_extracted", -1).limit(10).to_list(length=10)
     
-    # 2. Fetch Manual Expenses (receipt_id: None)
     expense_match = {"receipt_id": None, **base_match}
     if date_query: expense_match["date"] = date_query
     
@@ -213,9 +227,11 @@ async def get_expense_summary(
             raise HTTPException(status_code=403, detail="Not a member of this workspace")
         base_match = {"workspace_id": workspace_id}
     else:
-        base_match = {"user_id": user_id, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
+        base_match = {
+            "user_id": user_id,
+            "$or": [{"workspace_id": {"$exists": False}}, {"workspace_id": None}]
+        }
 
-    # Date Filtering
     start_date = None
     end_date = None
     now = datetime.utcnow()
@@ -236,19 +252,22 @@ async def get_expense_summary(
     date_query = {}
     if start_date: date_query = {"$gte": start_date, "$lt": end_date}
 
-    # 1. From Receipts
     receipt_match = {**base_match}
-    if date_query: receipt_match["date_extracted"] = date_query
+    if date_query:
+        date_or = {"$or": [
+            {"date_extracted": date_query},
+            {"date_extracted": {"$exists": False}, "uploaded_at": date_query},
+            {"date_extracted": None, "uploaded_at": date_query},
+        ]}
+        receipt_match = {"$and": [{**base_match}, date_or]}
     
     receipts = await db.receipts.find(receipt_match).to_list(None)
     
-    # 2. From Manual Expenses
     expense_match = {"receipt_id": None, **base_match}
     if date_query: expense_match["date"] = date_query
     
     expenses = await db.expenses.find(expense_match).to_list(None)
 
-    # Aggregate by category
     summary = {}
     for r in receipts:
         items = r.get("items", [])
@@ -285,7 +304,6 @@ async def export_expenses(
     user_id = current_user["user_id"]
     db = get_database()
     
-    # 1. Date Filter
     query = {"user_id": user_id}
     if year and month:
         start_date = datetime(year, month, 1)
@@ -293,21 +311,17 @@ async def export_expenses(
         else: end_date = datetime(year, month + 1, 1)
         query["date"] = {"$gte": start_date, "$lt": end_date}
         
-    # Fetch expenses matching date range
     expenses = await db.expenses.find(query).sort("date", -1).to_list(length=10000)
     
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Report Meta Header
     period_str = f"{year}-{month:02d}" if year and month else "All Time"
     writer.writerow(["Financial Export", f"Period: {period_str}"])
     writer.writerow([])
     
-    # Column Headers
     writer.writerow(["Date", "Description", "Category", "Amount (Rs.)", "Source"])
     
-    # Rows
     total_amount = 0.0
     for ex in expenses:
         source = "Receipt Scanner" if ex.get("receipt_id") else "Manual"
@@ -325,7 +339,6 @@ async def export_expenses(
             source
         ])
         
-    # Totals Row
     writer.writerow([])
     writer.writerow(["", "", "Total:", f"{total_amount:.2f}", ""])
         
@@ -366,5 +379,10 @@ async def delete_expense(expense_id: str, current_user: dict = Depends(get_curre
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Expense not found")
-        
+
+    ws_id = expense.get("workspace_id")
+    if ws_id:
+        from app.routers.chat import manager
+        await manager.broadcast_event(ws_id, "expense_update", {})
+
     return {"message": "Expense deleted"}

@@ -37,12 +37,10 @@ export const CATEGORY_COLORS = {
 };
 
 export const getCategoryColor = (categoryName) => {
-    // Try exact match, otherwise default to "Other"
     if (categoryName && CATEGORY_COLORS[categoryName]) {
         return CATEGORY_COLORS[categoryName];
     }
 
-    // Try case-insensitive matching
     const matchingKey = Object.keys(CATEGORY_COLORS).find(
         (key) => key.toLowerCase() === (categoryName || '').toLowerCase()
     );

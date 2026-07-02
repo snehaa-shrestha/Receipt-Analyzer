@@ -41,7 +41,6 @@ export default function Game() {
         <div className="text-white text-center">Loading Quest...</div>
       ) : (
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Main Level Card */}
           <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-8 rounded-3xl shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
 
@@ -52,7 +51,6 @@ export default function Game() {
               <h2 className="text-3xl font-bold text-white mb-1">
                 Level {progress.level}
               </h2>
-              {/* <p className="text-purple-200 mb-6">Novice Saver</p> */}
               <br></br>
               <div className="w-full max-w-md mx-auto bg-gray-900/50 rounded-full h-4 relative overflow-hidden">
                 <div
@@ -66,7 +64,6 @@ export default function Game() {
             </div>
           </div>
 
-          {/* Stats Row */}
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
               <div className="p-4 bg-orange-500/20 rounded-xl text-orange-500">
@@ -93,7 +90,6 @@ export default function Game() {
             </div>
           </div>
 
-          {/* Quests */}
           <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <Target className="text-red-400" /> Active Quests

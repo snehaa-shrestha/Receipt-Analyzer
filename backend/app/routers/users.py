@@ -15,15 +15,11 @@ class UserUpdate(BaseModel):
 
 @router.get("/me")
 async def get_user_profile(current_user: dict = Depends(get_current_user)):
-    # current_user from auth is just the decoded token dict usually, 
-    # but in auth.py get_current_user returns a dict {"user_id": ..., "username": ...}
-    # We need to fetch full details from DB
     db = get_database()
     user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Return user data (excluding password)
     user["_id"] = str(user["_id"])
     user.pop("hashed_password", None)
     return user

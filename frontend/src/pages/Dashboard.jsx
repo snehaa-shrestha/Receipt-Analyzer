@@ -1,7 +1,7 @@
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useWorkspace } from "../context/WorkspaceContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "../api/axios";
 import {
   TrendingUp,
@@ -53,7 +53,6 @@ export default function Dashboard() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Month/Year selector state
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1); // 1-12
@@ -69,7 +68,8 @@ export default function Dashboard() {
 
   const COLORS = ["#8B5CF6", "#EC4899", "#3B82F6", "#10B981", "#F59E0B"];
 
-  const fetchData = async (year = selectedYear, month = selectedMonth) => {
+  const fetchData = useCallback(async (year = selectedYear, month = selectedMonth) => {
+    if (!user) return;
     try {
       const [gameRes, budgetRes, expenseRes, forecastRes, summaryRes] =
         await Promise.all([
@@ -105,21 +105,16 @@ export default function Dashboard() {
       );
       setRecentTx(expenseRes.data.slice(0, 5));
     } catch (e) {
-      console.error(e);
+      console.error("Dashboard fetchData error:", e);
       if (e.response?.status === 401) logout();
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, logout, selectedYear, selectedMonth]);
 
   useEffect(() => {
-    if (user) fetchData();
-  }, [user, logout]);
-
-  // Refetch when month/year changes
-  useEffect(() => {
-    if (user) fetchData(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth]);
+    fetchData(selectedYear, selectedMonth);
+  }, [fetchData]);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -168,7 +163,6 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 p-1">
           <div>
             <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
@@ -211,9 +205,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Hero Stats Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Balance Card */}
           <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-8 shadow-2xl text-white">
             <div className="absolute top-0 right-0 p-32 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 p-24 bg-black/10 rounded-full blur-2xl -ml-16 -mb-16 pointer-events-none"></div>
@@ -289,7 +281,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Month/Year Selector */}
                   <div className="mt-6 pt-6 border-t border-white/20">
                     <p className="text-indigo-200 text-sm mb-3 font-medium">
                       View by Month
@@ -338,7 +329,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Quick Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
             <div className="bg-gray-800/60 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 hover:border-gray-600 transition group">
               <div className="flex justify-between items-start mb-4">
@@ -383,7 +373,6 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Transactions List */}
           <div className="lg:col-span-2 bg-gray-800/40 backdrop-blur-md rounded-3xl border border-gray-700/50 p-6 shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -459,9 +448,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right Column: Breakdown & Budgets */}
-          {/* <div className="space-y-6"> */}
-          {/* Spending Breakdown Donut */}
           {/* <div className="bg-gray-800/40 backdrop-blur-md rounded-3xl border border-gray-700/50 p-6 shadow-xl flex flex-col">
                             <h3 className="text-lg font-bold text-white mb-4">Spending Breakdown</h3>
                             <div className="h-64 flex-1 relative">
@@ -501,7 +487,6 @@ export default function Dashboard() {
                             </div>
                         </div> */}
 
-          {/* Mini Budgets List */}
           {/* <div className="bg-gray-800/40 backdrop-blur-md rounded-3xl border border-gray-700/50 p-6 shadow-xl">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-bold text-white">Budgets</h3>
@@ -529,11 +514,9 @@ export default function Dashboard() {
                                 {budgets.length === 0 && <p className="text-gray-500 text-xs text-center py-4">No specific budgets set</p>}
                             </div>
                         </div> */}
-          {/* </div> */}
         </div>
       </div>
 
-      {/* Add Expense Modal */}
       {showAddModal && (
         <AddExpenseModal
           onClose={() => setShowAddModal(false)}
@@ -542,7 +525,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* AI Advisor Modal */}
       {showAIModal && (
         <AIAdvisorModal
           onClose={() => setShowAIModal(false)}
@@ -593,7 +575,6 @@ function AIAdvisorModal({ onClose, year, setYear, month, setMonth }) {
               <h2 className="text-2xl font-bold text-white">
                 AI Financial Advisor
               </h2>
-              {/* Interactive Date Selectors */}
               <div className="flex items-center gap-2 mt-1">
                 <select
                   value={month}
@@ -684,8 +665,6 @@ function AddExpenseModal({ onClose, refresh, currencySymbol }) {
     setLoading(true);
     setError("");
     try {
-      // Pass workspace_id in the body so the expense is stored in the same
-      // scope that the dashboard's GET queries filter by.
       await api.post("/expenses/", {
         description: formData.description,
         amount: parseFloat(formData.amount),

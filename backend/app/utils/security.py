@@ -6,7 +6,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
-# Use bcrypt and argon2 to support existing users (argon2) and new ones (bcrypt)
 PWD_CONTEXT = CryptContext(schemes=["bcrypt", "argon2"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
