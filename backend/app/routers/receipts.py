@@ -5,7 +5,7 @@ from app.utils.security import verify_password, ALGORITHM, SECRET_KEY
 from app.database import get_database
 from app.models.receipt import ReceiptSchema
 from app.services.ocr_service import extract_text
-from app.services.game_service import update_monthly_streak
+from app.services.game_service import update_weekly_streak
 
 from datetime import datetime
 import shutil
@@ -117,7 +117,7 @@ async def confirm_receipt(
                 "created_at": datetime.utcnow()
             })
         
-        await update_monthly_streak(current_user["user_id"])
+        await update_weekly_streak(current_user["user_id"])
 
         if request.workspace_id:
             from app.routers.chat import manager

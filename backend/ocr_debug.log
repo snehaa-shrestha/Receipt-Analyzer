@@ -284,3 +284,11 @@
 2026-07-24 09:23:38.406420 - Tier 2: Sending image directly to Gemini Vision...
 2026-07-24 09:23:55.367056 - Tier 2: Vision also returned 0 items. Falling back to regex.
 2026-07-24 09:23:55.367772 - Tier 3: Using regex analyzer fallback.
+2026-07-26 23:55:03.536149 - Starting model initialization...
+2026-07-26 23:55:23.102813 - Model initialization successful!
+2026-07-26 23:55:52.036964 - Doctr extracted 41 lines.
+2026-07-26 23:56:03.833295 - Tier 1 success: 3 items extracted via Doctr+Gemini text.
+2026-07-27 00:16:40.737205 - Starting model initialization...
+2026-07-27 00:16:57.346655 - Model initialization successful!
+2026-07-27 00:17:24.661926 - Doctr extracted 58 lines.
+2026-07-27 00:17:31.047814 - Tier 1 success: 6 items extracted via Doctr+Gemini text.

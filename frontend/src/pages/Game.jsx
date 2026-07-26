@@ -55,11 +55,11 @@ export default function Game() {
               <div className="w-full max-w-md mx-auto bg-gray-900/50 rounded-full h-4 relative overflow-hidden">
                 <div
                   className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-1000"
-                  style={{ width: `${progress.points % 100}%` }}
+                  style={{ width: `${Math.max(0, Math.min(100, ((progress.points - (progress.current_level_base_xp || 0)) / ((progress.next_level_points || 1) - (progress.current_level_base_xp || 0))) * 100))}%` }}
                 ></div>
               </div>
               <p className="text-sm text-gray-400 mt-2">
-                {progress.points % 100} / 100 XP to next level
+                {progress.points - (progress.current_level_base_xp || 0)} / {progress.next_level_points - (progress.current_level_base_xp || 0)} XP to next level
               </p>
             </div>
           </div>
@@ -70,9 +70,9 @@ export default function Game() {
                 <Flame size={32} />
               </div>
               <div>
-                <p className="text-gray-400 text-sm">Monthly Streak</p>
+                <p className="text-gray-400 text-sm">Weekly Streak</p>
                 <h3 className="text-2xl font-bold text-white">
-                  {progress.streak_count} Months
+                  {progress.streak_count} Weeks
                 </h3>
               </div>
             </div>
@@ -96,21 +96,19 @@ export default function Game() {
             </h3>
 
             <div className="space-y-4">
-              <QuestItem
-                title="Upload First Receipt"
-                xp={50}
-                completed={progress.points >= 50}
-              />
-              <QuestItem
-                title="3 Month Streak"
-                xp={200}
-                completed={progress.streak_count >= 3}
-              />
-              <QuestItem
-                title="Stay Under Budget"
-                xp={100}
-                completed={false} 
-              />
+              {progress.active_quests && progress.active_quests.length > 0 ? (
+                progress.active_quests.map((quest) => (
+                  <QuestItem
+                    key={quest.id}
+                    title={quest.title}
+                    description={quest.description}
+                    xp={quest.points}
+                    completed={quest.completed || false} 
+                  />
+                ))
+              ) : (
+                <p className="text-gray-400 text-center py-4">No active quests right now. You're a master!</p>
+              )}
             </div>
           </div>
         </div>
@@ -119,7 +117,7 @@ export default function Game() {
   );
 }
 
-function QuestItem({ title, xp, completed }) {
+function QuestItem({ title, description, xp, completed }) {
   return (
     <div
       className={clsx(
@@ -132,22 +130,29 @@ function QuestItem({ title, xp, completed }) {
       <div className="flex items-center gap-4">
         <div
           className={clsx(
-            "w-6 h-6 rounded-full flex items-center justify-center border-2",
+            "w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0",
             completed ? "bg-green-500 border-green-500" : "border-gray-500",
           )}
         >
           {completed && <CheckIcon />}
         </div>
-        <span
-          className={clsx(
-            "font-medium",
-            completed ? "text-gray-300 line-through" : "text-white",
+        <div className="flex flex-col">
+          <span
+            className={clsx(
+              "font-medium",
+              completed ? "text-gray-300 line-through" : "text-white",
+            )}
+          >
+            {title}
+          </span>
+          {description && (
+            <span className={clsx("text-xs mt-1", completed ? "text-gray-500 line-through" : "text-gray-400")}>
+              {description}
+            </span>
           )}
-        >
-          {title}
-        </span>
+        </div>
       </div>
-      <div className="flex items-center gap-1 text-yellow-400 font-bold text-sm">
+      <div className="flex items-center gap-1 text-yellow-400 font-bold text-sm shrink-0">
         +{xp} XP
       </div>
     </div>
