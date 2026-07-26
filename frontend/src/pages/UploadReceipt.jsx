@@ -1,30 +1,35 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import api from '../api/axios';
-import { Upload, Check, AlertCircle, Loader, FileImage, Receipt, Tag } from 'lucide-react';
-import { getCategoryColor } from '../utils/categoryColors';
+import { Upload, Check, AlertCircle, Loader, FileImage, Receipt, Tag, Edit3, Trash2, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function UploadReceipt() {
+    const navigate = useNavigate();
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState(null);
     const [error, setError] = useState('');
     const [manualCategory, setManualCategory] = useState('');
 
-    const CATEGORIES = ["Food", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];
+    const [filename, setFilename] = useState('');
+    const [reviewData, setReviewData] = useState(null);
+    const [confirming, setConfirming] = useState(false);
+
+    const CATEGORIES = ["Food", "Groceries", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
         if (selected) {
             setFile(selected);
             setPreview(URL.createObjectURL(selected));
-            setResult(null);
+            setReviewData(null);
+            setFilename('');
             setError('');
         }
     };
 
-    const handleUpload = async () => {
+    const handleAnalyze = async () => {
         if (!file) return;
 
         setLoading(true);
@@ -33,36 +38,98 @@ export default function UploadReceipt() {
         formData.append('file', file);
 
         try {
-            const queryParams = new URLSearchParams();
-            if (manualCategory) queryParams.append('manual_category', manualCategory);
-
-            const res = await api.post(`/receipts/upload?${queryParams.toString()}`, formData, {
+            const res = await api.post(`/receipts/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setResult(res.data);
+            setFilename(res.data.filename);
+            const pd = res.data.parsed_data || {};
+            
+            let dateStr = '';
+            if (pd.date_extracted) {
+                try { dateStr = new Date(pd.date_extracted).toISOString().split('T')[0]; } catch(e){}
+            }
+            if(!dateStr) dateStr = new Date().toISOString().split('T')[0];
+            
+            // Auto-set category from Gemini's suggestion
+            if (pd.suggested_category) {
+                setManualCategory(pd.suggested_category);
+            }
+
+            setReviewData({
+                merchant_name: pd.merchant_name || 'Unknown',
+                total_amount: pd.total_amount || 0,
+                date_extracted: dateStr,
+                suggested_category: pd.suggested_category || null,
+                items: pd.items || []
+            });
         } catch (e) {
             console.error(e);
-            setError(e.response?.data?.detail || 'Upload failed. Please try again.');
+            setError(e.response?.data?.detail || 'Analysis failed. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleConfirm = async () => {
+        if (!manualCategory) {
+            setError("Please select a primary category before saving.");
+            return;
+        }
+        setConfirming(true);
+        setError('');
+        try {
+            const payload = {
+                filename: filename,
+                merchant_name: reviewData.merchant_name,
+                total_amount: parseFloat(reviewData.total_amount) || 0,
+                date_extracted: new Date(reviewData.date_extracted).toISOString(),
+                category: manualCategory,
+                items: reviewData.items.map(i => ({
+                    description: i.item_name || i.description || 'Unknown',
+                    amount: parseFloat(i.price || i.amount || 0)
+                }))
+            };
+            const res = await api.post('/receipts/confirm', payload);
+            navigate('/receipts');
+        } catch (e) {
+            console.error(e);
+            setError(e.response?.data?.detail || 'Confirmation failed.');
+        } finally {
+            setConfirming(false);
+        }
+    };
+
+    const updateItem = (index, field, value) => {
+        const newItems = [...reviewData.items];
+        newItems[index][field] = value;
+        setReviewData({ ...reviewData, items: newItems });
+    };
+
+    const removeItem = (index) => {
+        const newItems = reviewData.items.filter((_, i) => i !== index);
+        setReviewData({ ...reviewData, items: newItems });
+    };
+
+    const addItem = () => {
+        setReviewData({ ...reviewData, items: [...reviewData.items, { item_name: '', price: 0 }] });
+    };
+
     return (
         <Layout>
-            <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+            <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
                 <div className="p-1">
                     <div className="flex items-center gap-2 text-gray-400 text-sm mb-1 font-medium tracking-wide uppercase">
                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                         AI Powered Extraction
                     </div>
                     <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-                        Scan Receipt
+                        Scan & Review Receipt
                     </h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-                    <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6 md:p-8 shadow-2xl relative overflow-hidden group/card">
+                    {/* Left Panel: Upload & Preview */}
+                    <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6 shadow-2xl relative overflow-hidden group/card sticky top-6">
                         <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
 
                         <div className="relative z-10 space-y-6">
@@ -78,10 +145,6 @@ export default function UploadReceipt() {
                                         </div>
                                         <h3 className="text-xl font-bold text-white mb-2">Drag & Drop Receipt</h3>
                                         <p className="text-gray-400 font-medium">Or click to browse your files</p>
-                                        <div className="mt-6 flex items-center justify-center gap-4 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                                            <span className="flex items-center gap-1"><FileImage size={14} /> JPG</span>
-                                            <span className="flex items-center gap-1"><FileImage size={14} /> PNG</span>
-                                        </div>
                                     </div>
                                 )}
                                 <input
@@ -89,51 +152,26 @@ export default function UploadReceipt() {
                                     accept="image/*"
                                     onChange={handleFileChange}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                                    title="Click to replace image"
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="flex items-center justify-between text-sm font-bold text-gray-300 uppercase tracking-wider">
-                                    <span className="flex items-center gap-2"><Tag size={16} className="text-blue-400" /> Primary Category</span>
-                                    <span className="text-xs text-blue-400/80 font-medium normal-case bg-blue-500/10 px-2.5 py-1 rounded-full">Required</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={manualCategory}
-                                        onChange={(e) => setManualCategory(e.target.value)}
-                                        className="w-full bg-gray-900/60 backdrop-blur-sm text-white rounded-xl p-4 border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none font-medium shadow-inner transition-all duration-200 cursor-pointer"
-                                        disabled={loading}
-                                    >
-                                        <option value="" disabled className="text-gray-500">Select a category for this receipt...</option>
-                                        {CATEGORIES.map(c => <option key={c} value={c} className="bg-gray-800">{c}</option>)}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
-                                        ▼
-                                    </div>
-                                </div>
-                            </div>
+                            {!reviewData && (
+                                <button
+                                    onClick={handleAnalyze}
+                                    disabled={!file || loading}
+                                    className="w-full relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-400 text-white p-4 rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all duration-300 flex items-center justify-center gap-3"
+                                >
+                                    {loading ? (
+                                        <><Loader className="animate-spin" size={24} /><span>Analyzing with AI...</span></>
+                                    ) : (
+                                        <><Receipt size={24} /><span>Analyze Receipt</span></>
+                                    )}
+                                </button>
+                            )}
 
-                            <button
-                                onClick={handleUpload}
-                                disabled={!file || !manualCategory || loading}
-                                className="w-full relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-400 text-white p-4 rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:shadow-none hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all duration-300 flex items-center justify-center gap-3"
-                            >
-                                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out"></div>
-                                {loading ? (
-                                    <>
-                                        <Loader className="animate-spin" size={24} />
-                                        <span>Analyzing Receipt...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Receipt size={0} />
-                                        <span>Analyze & Extract</span>
-                                    </>
-                                )}
-                            </button>
-
-                            {error && (
-                                <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl flex items-start gap-3 animate-in slide-in-from-bottom-2">
+                            {error && !reviewData && (
+                                <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl flex items-start gap-3">
                                     <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
                                     <span className="font-medium">{error}</span>
                                 </div>
@@ -141,70 +179,153 @@ export default function UploadReceipt() {
                         </div>
                     </div>
 
-                    {result ? (
-                        <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8 shadow-2xl animate-in slide-in-from-right-8 duration-500 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-
-                            <div className="flex flex-col items-center text-center border-b border-gray-700/50 pb-8 mb-8">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(52,211,153,0.3)] mb-4 ring-4 ring-green-500/20">
-                                    <Check size={32} strokeWidth={3} />
+                    {/* Right Panel: Review Form */}
+                    {reviewData ? (
+                        <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6 md:p-8 shadow-2xl animate-in slide-in-from-right-8 duration-500">
+                            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-700/50">
+                                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
+                                    <Edit3 size={24} />
                                 </div>
-                                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Success!</h2>
-                                <p className="text-emerald-400 font-medium tracking-wide">Receipt analyzed and saved to your account</p>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white">Review & Edit</h2>
+                                    <p className="text-gray-400 text-sm">Please verify the extracted information below.</p>
+                                </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 shadow-inner flex justify-between items-center">
-                                    <div>
-                                        <label className="text-gray-500 text-sm font-bold uppercase tracking-wider block mb-2">Merchant Name</label>
-                                        <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                                            {result.parsed_data.merchant_name || 'Unknown Merchant'}
-                                        </p>
-                                    </div>
-                                    {/* <div className="text-right">
-                                        <label className="text-gray-500 text-sm font-bold uppercase tracking-wider block mb-2">Category</label>
-                                        <span className={`px-3 py-1.5 rounded-lg border font-bold text-sm ${getCategoryColor(result.parsed_data.category).badgeClasses}`}>
-                                            {result.parsed_data.category || 'Uncategorized'}
-                                        </span>
-                                    </div> */}
+                            <div className="space-y-5">
+                                {/* Basic Fields */}
+                                <div>
+                                    <label className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1 block">Merchant Name</label>
+                                    <input
+                                        type="text"
+                                        value={reviewData.merchant_name}
+                                        readOnly
+                                        className="w-full bg-gray-900/60 text-white p-3 rounded-xl border border-gray-700 outline-none cursor-not-allowed opacity-80"
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 shadow-inner">
-                                        <label className="text-gray-500 text-sm font-bold uppercase tracking-wider block mb-2">Total Amount</label>
-                                        <p className="text-3xl font-bold text-white tracking-tight">
-                                            <span className="text-gray-500 mr-1">Rs.</span>
-                                            {result.parsed_data.total_amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
-                                        </p>
+                                    <div>
+                                        <label className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1 block">Date</label>
+                                        <input
+                                            type="date"
+                                            value={reviewData.date_extracted}
+                                            readOnly
+                                            className="w-full bg-gray-900/60 text-white p-3 rounded-xl border border-gray-700 outline-none cursor-not-allowed opacity-80 [color-scheme:dark]"
+                                        />
                                     </div>
-                                    <div className="bg-gray-900/50 rounded-2xl p-6 border border-gray-700/50 shadow-inner">
-                                        <label className="text-gray-500 text-sm font-bold uppercase tracking-wider block mb-2">Date Filtered</label>
-                                        <p className="text-xl font-bold text-gray-200 mt-2">
-                                            {result.parsed_data.date_extracted
-                                                ? new Date(result.parsed_data.date_extracted).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-                                                : 'Today'}
-                                        </p>
+                                    <div>
+                                        <label className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1 block">Total Amount (Rs.)</label>
+                                        <input
+                                            type="text"
+                                            value={reviewData.total_amount}
+                                            readOnly
+                                            className="w-full bg-gray-900/60 text-white p-3 rounded-xl border border-gray-700 outline-none cursor-not-allowed opacity-80"
+                                        />
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => {
-                                        setFile(null);
-                                        setPreview(null);
-                                        setResult(null);
-                                        setManualCategory('');
-                                    }}
-                                    className="w-full text-center py-4 text-gray-400 hover:text-white font-semibold transition-colors mt-4"
-                                >
-                                    Scan Another Receipt
-                                </button>
+                                <div>
+                                    {/* <div className="flex items-center justify-between mb-1">
+                                        <label className="text-gray-400 text-xs font-bold uppercase tracking-wider">Primary Category</label>
+                                        {reviewData.suggested_category && (
+                                            <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                                 AI Suggested: {reviewData.suggested_category}
+                                            </span>
+                                        )}
+                                    </div> */}
+                                    <select
+                                        value={manualCategory}
+                                        onChange={e => setManualCategory(e.target.value)}
+                                        className="w-full bg-gray-900/60 text-white p-3 rounded-xl border border-indigo-500/50 outline-none font-medium appearance-none cursor-pointer hover:border-indigo-400 transition-colors"
+                                    >
+                                        <option value="" disabled>Select category...</option>
+                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Items Table */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <label className="text-gray-400 text-xs font-bold uppercase tracking-wider">
+                                            Receipt Items <span className="text-indigo-400 ml-1">({reviewData.items.length})</span>
+                                        </label>
+                                    </div>
+
+                                    {/* Table header */}
+                                    <div className="grid grid-cols-12 gap-2 px-3 py-1.5 mb-1 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                        <span className="col-span-1">#</span>
+                                        <span className="col-span-7">Item Name</span>
+                                        <span className="col-span-3 text-right">Price (Rs.)</span>
+                                        <span className="col-span-1"></span>
+                                    </div>
+
+                                    <div className="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar">
+                                        {reviewData.items.map((item, idx) => (
+                                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-gray-800/40 hover:bg-gray-800/60 px-3 py-2 rounded-xl border border-gray-700/40 transition group">
+                                                <span className="col-span-1 text-gray-500 text-xs font-bold">{idx + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={item.item_name || item.description || ''}
+                                                    readOnly
+                                                    className="col-span-7 bg-transparent text-gray-200 outline-none text-sm cursor-default"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={item.price || item.amount || 0}
+                                                    readOnly
+                                                    className="col-span-3 bg-gray-900/50 text-white text-right px-2 py-1 rounded-lg border border-gray-700 outline-none text-sm font-mono cursor-default"
+                                                />
+                                                <div className="col-span-1"></div>
+                                            </div>
+                                        ))}
+                                        {reviewData.items.length === 0 && (
+                                            <div className="text-center text-gray-600 text-sm py-6 border border-dashed border-gray-800 rounded-xl">
+                                                No items detected from the receipt.
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Subtotal row */}
+                                    {reviewData.items.length > 0 && (
+                                        <div className="flex justify-between items-center mt-3 px-3 py-2.5 bg-gray-900/60 rounded-xl border border-gray-700/50">
+                                            <span className="text-gray-400 text-sm font-bold">Items Subtotal</span>
+                                            <span className="text-white font-mono font-bold">
+                                                Rs. {reviewData.items.reduce((sum, i) => sum + parseFloat(i.price || i.amount || 0), 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {error && (
+                                    <div className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-sm flex gap-2 items-center">
+                                        <AlertCircle size={16} /> {error}
+                                    </div>
+                                )}
+
+                                <div className="pt-4 flex gap-4">
+                                    <button
+                                        onClick={() => setReviewData(null)}
+                                        className="px-6 py-3 rounded-xl font-bold text-gray-300 hover:bg-gray-800 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleConfirm}
+                                        disabled={confirming}
+                                        className="flex-1 bg-green-500 hover:bg-green-400 text-black px-6 py-3 rounded-xl font-bold transition flex justify-center items-center gap-2"
+                                    >
+                                        {confirming ? <Loader className="animate-spin" size={20} /> : <Check size={20} />}
+                                        {confirming ? 'Saving...' : 'Confirm & Save'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (
                         <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[500px] border-2 border-dashed border-gray-800 rounded-3xl opacity-50">
-                            <Receipt size={0} className="text-gray-700 mb-6" />
+                            <Receipt size={48} className="text-gray-700 mb-6" />
                             <p className="text-gray-500 font-medium text-lg max-w-xs text-center">
-                                Your analysis results will appear here
+                                Upload a receipt to review the extracted data here
                             </p>
                         </div>
                     )}

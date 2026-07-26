@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from app.database import get_database
 
-async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
+async def predict_next_month_expenses(user_id: str, workspace_id: str = None, category: str = None):
     db = get_database()
     
     base_match = {}
@@ -21,18 +21,27 @@ async def predict_next_month_expenses(user_id: str, workspace_id: str = None):
     
     data = []
     for r in receipts:
+        items = r.get("items", [])
+        receipt_category = r.get("category") or r.get("suggested_category") or (items[0].get("category", "Shopping") if items else "Shopping")
+        if category and receipt_category != category:
+            continue
         data.append({
             "date": r.get("date_extracted") or r.get("uploaded_at"),
             "amount": r.get("total_amount", 0.0)
         })
         
     for e in manual_expenses:
+        expense_category = e.get("category", "Uncategorized")
+        if category and expense_category != category:
+            continue
         data.append({
             "date": e.get("date"),
             "amount": e.get("amount", 0.0)
         })
     
     if not data:
+        if category:
+            return {"predicted_amount": 0.0, "advice": f"Not enough data to forecast for {category}."}
         return {"predicted_amount": 0.0, "advice": "Start tracking expenses to see AI forecasts!"}
 
     df = pd.DataFrame(data)

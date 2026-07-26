@@ -142,3 +142,145 @@
 2026-07-02 18:59:05.479352 - OCR completed. Merchant: Korean Restaurant
 2026-07-02 18:59:53.540440 - Starting OCR for file: 44f15ea7-2a88-4d13-8621-8b2ebeb5fbc7.jpg
 2026-07-02 19:00:03.343215 - OCR completed. Merchant: BHAT- BHATENI SUPER MARKETINAXAL)
+2026-07-03 09:46:39.180439 - Starting OCR for file: 08cd03a4-26d7-421c-bb1e-052463d34521.jpg
+2026-07-03 09:46:40.296132 - Starting model initialization...
+2026-07-03 09:46:48.281651 - Model initialization successful!
+2026-07-03 09:46:59.699364 - OCR completed. Merchant: BIG MART
+2026-07-03 16:09:19.270576 - Starting OCR for file: aa34c5a9-3e62-4bf0-8f1b-a4c78aeebf6c.jpg
+2026-07-03 16:09:21.600043 - Starting model initialization...
+2026-07-03 16:09:32.026571 - Model initialization successful!
+2026-07-03 16:09:46.525726 - OCR completed. Merchant: cheli bhansa ghar
+2026-07-03 17:12:32.033816 - Starting OCR for file: 2be4cd0e-cb8e-4996-b40f-d9914a6426ac.jpg
+2026-07-03 17:12:33.237186 - Starting model initialization...
+2026-07-03 17:12:42.475389 - Model initialization successful!
+2026-07-03 17:12:54.151716 - OCR completed. Merchant: BIG MART
+2026-07-03 18:06:42.621353 - Starting OCR for file: a2907472-af5a-4b8f-a587-377e24a82750.jpg
+2026-07-03 18:07:06.126473 - OCR completed. Merchant: BIG MART
+2026-07-03 18:10:25.838893 - Starting OCR for file: baa87c58-64bf-46d8-a426-c8b52d1cc02e.jpg
+2026-07-03 18:10:41.643725 - OCR completed. Merchant: cheli bhansa ghar
+2026-07-03 18:13:21.079326 - Starting OCR for file: f6518996-5348-46ec-b8c9-5d4a874edd88.jpg
+2026-07-03 18:13:35.626502 - OCR completed. Merchant: KICK FUN WORLD PVILTD.
+2026-07-08 14:54:00.649789 - Starting OCR for file: 7b793cde-5f68-408c-ba97-abdab7118e5b.jpg
+2026-07-08 14:54:01.547892 - Starting model initialization...
+2026-07-08 14:54:10.444123 - Model initialization successful!
+2026-07-08 14:54:22.131218 - OCR completed. Merchant: BIG MART
+2026-07-08 16:03:02.858639 - Starting OCR for file: e5bb823a-5c34-4d3f-a1cb-c57355cc1210.jpg
+2026-07-08 16:03:03.522941 - Starting model initialization...
+2026-07-08 16:03:12.612454 - Model initialization successful!
+2026-07-08 16:03:24.599118 - OCR completed. Merchant: cheli bhansa ghar
+2026-07-08 16:05:43.613598 - Starting OCR for file: 940c8443-8877-496d-88c9-136c0f1057d7.jpg
+2026-07-08 16:05:52.322131 - OCR completed. Merchant: BIG MART
+2026-07-08 16:43:38.019987 - Falling back to Doctr OCR...
+2026-07-08 16:43:38.184815 - Starting model initialization...
+2026-07-08 16:43:45.183575 - Model initialization successful!
+2026-07-08 16:43:58.851269 - Falling back to Doctr OCR...
+2026-07-08 16:46:03.356068 - Starting model initialization...
+2026-07-08 16:46:08.528003 - Model initialization successful!
+2026-07-08 16:46:16.237647 - Doctr extracted 38 text lines. Sending to Gemini for parsing...
+2026-07-08 16:46:19.950170 - Gemini unavailable. Using regex analyzer fallback.
+2026-07-08 16:53:02.107670 - Starting model initialization...
+2026-07-08 16:53:09.302443 - Model initialization successful!
+2026-07-08 16:53:30.848282 - Doctr extracted 38 text lines. Sending to Gemini for parsing...
+2026-07-08 16:53:33.038090 - Gemini unavailable. Using regex analyzer fallback.
+2026-07-08 17:07:40.835596 - Starting model initialization...
+2026-07-08 17:07:54.798148 - Model initialization successful!
+2026-07-08 17:08:17.103577 - Doctr extracted 38 lines.
+2026-07-08 17:08:28.362888 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-08 17:08:29.070549 - Tier 3: Using regex analyzer fallback.
+2026-07-08 17:18:03.132333 - Starting model initialization...
+2026-07-08 17:18:08.739940 - Model initialization successful!
+2026-07-08 17:18:19.941850 - Doctr extracted 38 lines.
+2026-07-08 17:18:22.523147 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-08 17:18:23.216914 - Tier 3: Using regex analyzer fallback.
+2026-07-15 15:14:23.132668 - Starting model initialization...
+2026-07-15 15:14:51.999750 - Model initialization successful!
+2026-07-15 15:15:18.019976 - Doctr extracted 38 lines.
+2026-07-15 15:15:27.471151 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-15 15:15:28.177442 - Tier 3: Using regex analyzer fallback.
+2026-07-15 15:21:13.737214 - Starting model initialization...
+2026-07-15 15:21:19.342611 - Model initialization successful!
+2026-07-15 15:21:32.129093 - Doctr extracted 38 lines.
+2026-07-15 15:21:33.446919 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-15 15:21:34.071226 - Tier 3: Using regex analyzer fallback.
+2026-07-15 15:29:51.604555 - Starting model initialization...
+2026-07-15 15:29:57.338837 - Model initialization successful!
+2026-07-15 15:30:04.969478 - Doctr extracted 38 lines.
+2026-07-15 15:30:06.601341 - ERROR: Gemini text parse failed - 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.
+2026-07-15 15:30:06.601949 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-15 15:30:07.264935 - ERROR: Gemini Vision fallback failed - 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.
+2026-07-15 15:30:07.325013 - Tier 3: Using regex analyzer fallback.
+2026-07-15 15:42:21.127087 - Starting model initialization...
+2026-07-15 15:42:26.502518 - Model initialization successful!
+2026-07-15 15:42:35.318774 - Doctr extracted 38 lines.
+2026-07-15 15:42:43.965925 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-15 15:59:55.461966 - Doctr extracted 38 lines.
+2026-07-15 16:00:01.582509 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-15 16:04:34.065458 - Doctr extracted 38 lines.
+2026-07-15 16:04:41.430088 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-15 16:10:50.861508 - Doctr extracted 45 lines.
+2026-07-15 16:10:56.323483 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-15 16:21:58.263619 - Doctr extracted 38 lines.
+2026-07-15 16:22:04.795099 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 11:27:37.107213 - Starting model initialization...
+2026-07-21 11:27:50.121614 - Model initialization successful!
+2026-07-21 11:28:12.626215 - Doctr extracted 63 lines.
+2026-07-21 11:28:20.035066 - Tier 1 success: 3 items extracted via Doctr+Gemini text.
+2026-07-21 12:01:33.818594 - Doctr extracted 58 lines.
+2026-07-21 12:01:43.302651 - Tier 1 success: 6 items extracted via Doctr+Gemini text.
+2026-07-21 13:27:15.984861 - Starting model initialization...
+2026-07-21 13:27:27.520173 - Model initialization successful!
+2026-07-21 13:27:40.499207 - Doctr extracted 45 lines.
+2026-07-21 13:27:44.929782 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:33:12.313910 - Starting model initialization...
+2026-07-21 13:33:21.464956 - Model initialization successful!
+2026-07-21 13:33:35.690020 - Doctr extracted 45 lines.
+2026-07-21 13:33:40.762279 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:36:33.741275 - Starting model initialization...
+2026-07-21 13:36:43.587433 - Model initialization successful!
+2026-07-21 13:36:58.784079 - Doctr extracted 45 lines.
+2026-07-21 13:37:04.568295 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:39:18.106180 - Starting model initialization...
+2026-07-21 13:39:28.835202 - Model initialization successful!
+2026-07-21 13:39:48.811025 - Doctr extracted 45 lines.
+2026-07-21 13:39:53.022939 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:42:14.118588 - Doctr extracted 45 lines.
+2026-07-21 13:42:23.487993 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:42:43.485464 - Doctr extracted 38 lines.
+2026-07-21 13:42:48.316923 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:48:15.304245 - Starting model initialization...
+2026-07-21 13:48:20.987715 - Model initialization successful!
+2026-07-21 13:48:35.803324 - Doctr extracted 45 lines.
+2026-07-21 13:48:41.595451 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-21 13:50:27.572765 - Doctr extracted 63 lines.
+2026-07-21 13:50:40.093878 - Tier 1 success: 3 items extracted via Doctr+Gemini text.
+2026-07-22 13:05:34.180333 - Starting model initialization...
+2026-07-22 13:05:44.476957 - Model initialization successful!
+2026-07-22 13:05:59.094847 - Doctr extracted 58 lines.
+2026-07-22 13:06:13.655405 - Tier 1 success: 6 items extracted via Doctr+Gemini text.
+2026-07-22 13:08:30.558863 - Doctr extracted 54 lines.
+2026-07-22 13:08:41.317188 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-22 13:16:05.137482 - Doctr extracted 41 lines.
+2026-07-22 13:16:11.390582 - Tier 1 success: 1 items extracted via Doctr+Gemini text.
+2026-07-23 11:31:15.971405 - Starting model initialization...
+2026-07-23 11:31:30.989199 - Model initialization successful!
+2026-07-23 11:31:55.869879 - Doctr extracted 45 lines.
+2026-07-23 11:32:03.101590 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-23 11:40:12.631430 - Starting model initialization...
+2026-07-23 11:40:18.894841 - Model initialization successful!
+2026-07-23 11:40:30.588353 - Doctr extracted 54 lines.
+2026-07-23 11:40:37.069540 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-23 11:41:17.584154 - Doctr extracted 45 lines.
+2026-07-23 11:41:21.774192 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-23 11:43:19.964704 - Starting model initialization...
+2026-07-23 11:43:26.501988 - Model initialization successful!
+2026-07-23 11:43:38.758554 - Doctr extracted 45 lines.
+2026-07-23 11:43:43.993257 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-24 09:13:22.326662 - Starting model initialization...
+2026-07-24 09:13:34.454566 - Model initialization successful!
+2026-07-24 09:14:07.049817 - Doctr extracted 45 lines.
+2026-07-24 09:14:14.899442 - Tier 1 success: 2 items extracted via Doctr+Gemini text.
+2026-07-24 09:23:27.860616 - Doctr extracted 159 lines.
+2026-07-24 09:23:38.406005 - Tier 1: Gemini text parse returned 0 items. Escalating to Tier 2 (Vision).
+2026-07-24 09:23:38.406420 - Tier 2: Sending image directly to Gemini Vision...
+2026-07-24 09:23:55.367056 - Tier 2: Vision also returned 0 items. Falling back to regex.
+2026-07-24 09:23:55.367772 - Tier 3: Using regex analyzer fallback.

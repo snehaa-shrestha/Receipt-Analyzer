@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
-from typing import List, Optional
+from typing import Any, List, Optional
+from pydantic import BaseModel
 from app.utils.security import verify_password, ALGORITHM, SECRET_KEY
 from app.database import get_database
 from app.models.receipt import ReceiptSchema
@@ -11,6 +12,7 @@ import shutil
 import os
 import uuid
 from app.utils.security import get_current_user
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -18,16 +20,19 @@ UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
+class ConfirmReceiptRequest(BaseModel):
+    filename: str
+    workspace_id: Optional[str] = None
+    merchant_name: str
+    total_amount: float
+    date_extracted: str
+    category: str
+    items: List[dict]
+
 @router.post("/upload")
 async def upload_receipt(
-    file: UploadFile = File(...), 
-    manual_date: Optional[str] = Query(None),
-    manual_category: Optional[str] = Query(None),
-    workspace_id: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    file: UploadFile = File(...)
 ):
-
-    
     try:
         file_ext = file.filename.split(".")[-1]
         filename = f"{uuid.uuid4()}.{file_ext}"
@@ -38,68 +43,61 @@ async def upload_receipt(
             
         with open(filepath, "rb") as f:
             file_bytes = f.read()
-        
-        from app.services.ocr_service import log_to_file
-        log_to_file(f"Starting OCR for file: {filename}")
             
         parsed_data = extract_text(file_bytes)
-        log_to_file(f"OCR completed. Merchant: {parsed_data.get('merchant_name')}")
         
-        merchant = parsed_data.get("merchant_name", "Unknown") or "Unknown"
-        detected_category = "Shopping"
-        
-        m_lower = merchant.lower()
-        if any(k in m_lower for k in ['food', 'kitchen', 'restaurant', 'cafe', 'bhat', 'pizza']): detected_category = "Food"
-        elif any(k in m_lower for k in ['mart', 'store', 'market', 'grocery', 'kirana']): detected_category = "Groceries"
-        elif any(k in m_lower for k in ['fuel', 'petrol', 'taxi', 'ride']): detected_category = "Transport"
-        
-        use_category = manual_category.strip() if manual_category and manual_category.strip() else detected_category
-        enriched_items = []
-        for item in parsed_data.get("items", []):
-            enriched_items.append({
-                "description": item["item_name"], # Note: ReceiptAnalyzer uses 'item_name'
-                "amount": item["price"],          # Note: ReceiptAnalyzer uses 'price'
-                "quantity": 1.0,
-                "category": use_category
-            })
-        
-        final_date = parsed_data.get("date_extracted")
-        
-        if not final_date and manual_date:
-            try:
-                final_date = datetime.fromisoformat(manual_date.replace('Z', '+00:00'))
-            except:
-                pass
-        
-        if not final_date:
-            final_date = datetime.utcnow()
+        return {
+            "message": "Receipt analyzed. Please review.", 
+            "parsed_data": parsed_data,
+            "filename": filename
+        }
+    except Exception as e:
+        print(f"UPLOAD FAILED: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/confirm")
+async def confirm_receipt(
+    request: ConfirmReceiptRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        filepath = os.path.join(UPLOAD_DIR, request.filename)
+        
+        try:
+            final_date = datetime.fromisoformat(request.date_extracted.replace('Z', '+00:00'))
+        except:
+            final_date = datetime.utcnow()
+        
         receipt_data = {
             "user_id": current_user["user_id"],
-            "workspace_id": workspace_id,
-            "image_url": filepath, # In prod, return a static URL
+            "workspace_id": request.workspace_id,
+            "image_url": filepath,
             "uploaded_at": datetime.utcnow(),
-            "merchant_name": parsed_data.get("merchant_name", "Unknown"),
-            "total_amount": parsed_data.get("total_amount") or 0.0,
+            "merchant_name": request.merchant_name,
+            "total_amount": request.total_amount,
             "date_extracted": final_date,
-            "raw_text": parsed_data.get("raw_text", ""),
-            "category": use_category,
-            "items": enriched_items
+            "category": request.category,
+            "items": request.items
         }
-
         
         db = get_database()
         new_receipt = await db.receipts.insert_one(receipt_data)
         receipt_id = str(new_receipt.inserted_id)
  
         expense_docs = []
-        for item in enriched_items:
+        for item in request.items:
+            # Handle both 'price' and 'amount' depending on what frontend sends
+            amt = item.get("amount", item.get("price", 0))
+            if amt is None or amt == "": amt = 0
+            
             expense_docs.append({
                 "user_id": current_user["user_id"],
-                "workspace_id": workspace_id,
-                "description": item["description"],
-                "amount": item["amount"],
-                "category": item["category"],
+                "workspace_id": request.workspace_id,
+                "description": item.get("description", item.get("item_name", "Unknown Item")),
+                "amount": float(amt),
+                "category": item.get("category", request.category),
                 "date": final_date,
                 "receipt_id": receipt_id,
                 "created_at": datetime.utcnow()
@@ -107,37 +105,30 @@ async def upload_receipt(
             
         if expense_docs:
             await db.expenses.insert_many(expense_docs)
-        elif receipt_data["total_amount"] > 0:
-            merchant_name = parsed_data.get("merchant_name", "Receipt Total")
-            
+        elif request.total_amount > 0:
             await db.expenses.insert_one({
                 "user_id": current_user["user_id"],
-                "workspace_id": workspace_id,
-                "description": merchant_name,
-                "amount": receipt_data["total_amount"],
-                "category": manual_category or detected_category,
+                "workspace_id": request.workspace_id,
+                "description": request.merchant_name,
+                "amount": request.total_amount,
+                "category": request.category,
                 "date": final_date,
                 "receipt_id": receipt_id,
                 "created_at": datetime.utcnow()
             })
         
-        parsed_data["date_extracted"] = final_date
-        parsed_data["merchant_name"] = parsed_data.get("merchant_name") # Keep as is
-        
         await update_monthly_streak(current_user["user_id"])
 
-        if workspace_id:
+        if request.workspace_id:
             from app.routers.chat import manager
-            await manager.broadcast_event(workspace_id, "expense_update", {})
+            await manager.broadcast_event(request.workspace_id, "expense_update", {})
 
         return {
-            "message": "Receipt uploaded and processed", 
-            "receipt_id": str(new_receipt.inserted_id),
-            "parsed_data": parsed_data
+            "message": "Receipt confirmed and saved", 
+            "receipt_id": receipt_id
         }
-        
     except Exception as e:
-        print(f"UPLOAD FAILED: {str(e)}")
+        print(f"CONFIRM FAILED: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -154,13 +145,12 @@ async def get_receipts(
     db = get_database()
     
     if workspace_id:
-        from bson import ObjectId
         workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
         if not workspace or not any(m["user_id"] == current_user["user_id"] for m in workspace.get("members", [])):
             raise HTTPException(status_code=403, detail="Not a member of this workspace")
-        query = {"workspace_id": workspace_id}
+        query: dict[str, Any] = {"workspace_id": workspace_id}
     else:
-        query = {"user_id": current_user["user_id"], "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
+        query: dict[str, Any] = {"user_id": current_user["user_id"], "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]}
     
     if search:
         query["$or"] = [
@@ -179,13 +169,40 @@ async def get_receipts(
         
     return receipts
 
+@router.get("/{receipt_id}")
+async def get_receipt(
+    receipt_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_database()
+    try:
+        r_oid = ObjectId(receipt_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid receipt ID")
+        
+    receipt = await db.receipts.find_one({"_id": r_oid})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+        
+    # Check permissions (basic check, could be expanded for workspaces)
+    if receipt.get("user_id") != current_user["user_id"]:
+        # Allow if it's in a workspace they belong to
+        if receipt.get("workspace_id"):
+            workspace = await db.workspaces.find_one({"_id": ObjectId(receipt["workspace_id"])})
+            if not workspace or not any(m["user_id"] == current_user["user_id"] for m in workspace.get("members", [])):
+                raise HTTPException(status_code=403, detail="Not authorized")
+        else:
+            raise HTTPException(status_code=403, detail="Not authorized")
+            
+    receipt["_id"] = str(receipt["_id"])
+    return receipt
+
 @router.delete("/{receipt_id}")
 async def delete_receipt(
     receipt_id: str,
     current_user: dict = Depends(get_current_user)
 ):
     db = get_database()
-    from bson import ObjectId
     
     try:
         r_oid = ObjectId(receipt_id)
@@ -206,9 +223,6 @@ async def delete_receipt(
     elif receipt["user_id"] != current_user["user_id"]:
         raise HTTPException(status_code=403, detail="Not authorized to delete this receipt")
     
-    if not receipt:
-        raise HTTPException(status_code=404, detail="Receipt not found")
-        
     try:
         if receipt.get("image_url") and os.path.exists(receipt["image_url"]):
             os.remove(receipt["image_url"])
@@ -220,3 +234,43 @@ async def delete_receipt(
     await db.receipts.delete_one({"_id": r_oid})
     
     return {"message": "Receipt and associated data deleted successfully"}
+
+class SplitDataRequest(BaseModel):
+    people: list
+    assignments: dict
+
+@router.put("/{receipt_id}/split")
+async def save_receipt_split(
+    receipt_id: str,
+    request: SplitDataRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_database()
+    try:
+        r_oid = ObjectId(receipt_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid receipt ID")
+        
+    receipt = await db.receipts.find_one({"_id": r_oid})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+        
+    if receipt.get("workspace_id"):
+        workspace = await db.workspaces.find_one({"_id": ObjectId(receipt["workspace_id"])})
+        is_admin = False
+        if workspace:
+            is_admin = any(m["user_id"] == current_user["user_id"] and m["role"] == "admin" for m in workspace.get("members", []))
+        if receipt["user_id"] != current_user["user_id"] and not is_admin:
+            raise HTTPException(status_code=403, detail="Not authorized to edit this receipt")
+    elif receipt["user_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this receipt")
+        
+    await db.receipts.update_one(
+        {"_id": r_oid},
+        {"$set": {
+            "split_people": request.people,
+            "split_assignments": request.assignments
+        }}
+    )
+    
+    return {"message": "Split data saved successfully"}

@@ -97,48 +97,73 @@ async def get_financial_advice(user_id: str, year: int = None, month: int = None
         ])
 
         prompt = f"""
-        Act as a highly capable, expert financial advisor. 
-        Perform a COMPREHENSIVE deep-dive analysis of the following spending data for the period: {period_str}.
-        
-        SUMMARY DATA:
-        - Total Spent: {total_spent}
-        - Transaction Count: {count}
-        - Category Breakdown: {categories}
-        
-        FULL TRANSACTION HISTORY:
-        {tx_list_str}
-        
-        INSTRUCTIONS:
-        1. Analyze the spending patterns deeply. Identify specific trends.
-        2. Provide 3-4 detailed, actionable, and personalized insights.
-        3. Flag any specific high-value transactions that look unusual.
-        
-        FORMATTING RULES (EXTREMELY STRICT):
-        - OUTPUT MUST BE PLAIN TEXT ONLY.
-        - NO Markdown characters allowed (NO '#', NO '*', NO '**', NO '`').
-        - NO Emojis allowed.
-        - Use UPPERCASE for section headers.
-        - Use standard dashes (-) for bullet points.
-        - Do not use bold or italic text.
-        
-        REQUIRED OUTPUT FORMAT:
-        
-        ANALYSIS PERIOD: [Month Year]
-        
-        SUMMARY AND PATTERNS
-        [Your deep analysis of the spending patterns here...]
-        
-        KEY INSIGHTS
-        - [Insight 1]
-        - [Insight 2]
-        - [Insight 3]
-        
-        UNUSUAL ACTIVITY
-        [Details on flagged transactions...]
-        
-        RECOMMENDATIONS
-        [Specific advice...]
-        """
+You are a smart personal finance assistant.
+
+Analyze the user's spending data for the period: {period_str}.
+
+SUMMARY
+- Total Spent: {total_spent}
+- Transaction Count: {count}
+- Category Breakdown:
+{categories}
+
+TRANSACTIONS
+{tx_list_str}
+
+INSTRUCTIONS
+- Analyze only the provided data.
+- Do not make assumptions if there is insufficient information.
+- Keep the analysis concise, practical, and easy to understand.
+- Use short bullet points instead of long paragraphs.
+- Each bullet should contain only one idea.
+- Avoid repeating the same information.
+- Mention percentages where appropriate.
+- Highlight the largest expense.
+- If only a few transactions are available, clearly state that more data is needed for meaningful trend analysis.
+
+FORMATTING RULES
+- Output must be plain text only.
+- Do NOT use Markdown.
+- Do NOT use bold, italics, emojis, or special formatting.
+- Use UPPERCASE section headings.
+- Use "-" for bullet points.
+- Keep the total response under 180 words.
+
+OUTPUT FORMAT
+
+ANALYSIS PERIOD
+{period_str}
+
+OVERVIEW
+Total Spent: {total_spent}
+Transactions: {count}
+Top Category: [category]
+Highest Expense: [merchant] (Rs. [amount])
+
+SPENDING PATTERN
+- Describe the overall spending behavior.
+- Mention whether spending is concentrated or diversified.
+- Mention any noticeable trends.
+
+KEY INSIGHTS
+- Insight 1
+- Insight 2
+- Insight 3
+
+UNUSUAL ACTIVITY
+- Mention any unusually large transactions.
+- If none exist, say "No unusual spending detected."
+
+RECOMMENDATIONS
+- Recommendation 1
+- Recommendation 2
+- Recommendation 3
+
+Remember:
+- Base every statement only on the supplied transactions.
+- If the dataset is too small, say so instead of inventing trends.
+- Be clear, helpful, and concise.
+"""
 
         for model_name in models_to_try:
             try:

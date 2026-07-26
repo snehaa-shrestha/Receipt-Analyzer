@@ -12,6 +12,7 @@ import Game from './pages/Game';
 import Profile from './pages/Profile';
 import Transactions from './pages/Transactions';
 import Network from './pages/Network';
+import BillSplitter from './pages/BillSplitter';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/network" element={<Network />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/transactions" element={<Transactions />} />
+                <Route path="/split/:receipt_id" element={<BillSplitter />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Route>
             </Routes>

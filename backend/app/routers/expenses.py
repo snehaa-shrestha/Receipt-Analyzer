@@ -284,10 +284,11 @@ async def get_expense_summary(
 @router.get("/forecast")
 async def get_forecast(
     workspace_id: Optional[str] = None,
+    category: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     user_id = current_user["user_id"]
-    prediction = await predict_next_month_expenses(user_id, workspace_id)
+    prediction = await predict_next_month_expenses(user_id, workspace_id, category)
     return prediction
 
 @router.get("/export")

@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Search, FileText, Trash2, Calendar, Filter } from 'lucide-react';
+import { Search, FileText, Trash2, Calendar, Filter, Users, Eye, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getCategoryColor } from '../utils/categoryColors';
 
-const CATEGORIES = ["All", "Food", "Groceries", "Transport", "Utilities", "Entertainment", "Shopping", "Other"];
+const CATEGORIES = ["All", "Food", "Groceries", "Transport", "Shopping", "Utilities", "Entertainment", "Health", "Other"];
 
 export default function ReceiptGallery() {
     const { user } = useAuth();
@@ -14,6 +15,7 @@ export default function ReceiptGallery() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [deleteLoading, setDeleteLoading] = useState(null);
+    const [viewingReceipt, setViewingReceipt] = useState(null);
 
     const currencySymbol = {
         'USD': 'Rs.',
@@ -151,13 +153,47 @@ export default function ReceiptGallery() {
                                     <span>{receipt.items?.length || 0} items</span>
                                 </div>
 
-                                <button
-                                    onClick={() => handleDelete(receipt._id)}
-                                    disabled={deleteLoading === receipt._id}
-                                    className="w-full py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition flex items-center justify-center gap-2 text-sm font-medium"
-                                >
-                                    {deleteLoading === receipt._id ? "Deleting..." : <><Trash2 size={16} /> Delete Receipt</>}
-                                </button>
+                                {receipt.items && receipt.items.length > 0 && (
+                                    <div className="mb-4 bg-gray-900/50 rounded-xl p-3 border border-gray-700/50 max-h-32 overflow-y-auto custom-scrollbar">
+                                        <div className="space-y-2">
+                                            {receipt.items.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between text-xs items-center border-b border-gray-800 pb-1 last:border-0 last:pb-0">
+                                                    <span className="text-gray-300 truncate mr-2" title={item.description || item.item_name}>
+                                                        {item.description || item.item_name}
+                                                    </span>
+                                                    <span className="text-gray-400 font-bold whitespace-nowrap">
+                                                        {currencySymbol}{(item.amount || item.price || 0).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button
+                                        onClick={() => setViewingReceipt(receipt)}
+                                        title="View Receipt"
+                                        className="py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition flex items-center justify-center gap-1.5 text-sm font-medium"
+                                    >
+                                        <Eye size={16} /> <span className="hidden xl:inline">View</span>
+                                    </button>
+                                    <Link
+                                        to={`/split/${receipt._id}`}
+                                        title="Split Bill"
+                                        className="py-2 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition flex items-center justify-center gap-1.5 text-sm font-medium"
+                                    >
+                                        <Users size={16} /> <span className="hidden xl:inline">Split</span>
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDelete(receipt._id)}
+                                        disabled={deleteLoading === receipt._id}
+                                        title="Delete Receipt"
+                                        className="py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition flex items-center justify-center gap-1.5 text-sm font-medium"
+                                    >
+                                        {deleteLoading === receipt._id ? "..." : <><Trash2 size={16} /> <span className="hidden xl:inline">Delete</span></>}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -167,6 +203,90 @@ export default function ReceiptGallery() {
                             No receipts found.
                         </div>
                     )}
+                </div>
+            )}
+
+            {viewingReceipt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setViewingReceipt(null)}>
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <button 
+                            onClick={() => setViewingReceipt(null)}
+                            className="absolute top-4 right-4 p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition z-10 border border-gray-700 hover:bg-gray-700"
+                        >
+                            <X size={20} />
+                        </button>
+                        
+                        <div className="w-full md:w-1/2 bg-black flex items-center justify-center p-4 min-h-[300px] border-b md:border-b-0 md:border-r border-gray-800 relative group">
+                            {viewingReceipt.image_url ? (
+                                <img
+                                    src={`http://localhost:8000/static/${viewingReceipt.image_url.split(/[/\\]/).pop()}`}
+                                    alt="Receipt Full"
+                                    className="max-w-full max-h-[85vh] object-contain"
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-gray-700">
+                                    <FileText size={64} className="mb-4" />
+                                    <p>No image available</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="w-full md:w-1/2 p-6 overflow-y-auto max-h-[85vh] custom-scrollbar bg-gray-900/50">
+                            <h2 className="text-2xl font-bold text-white mb-3 pr-8">{viewingReceipt.merchant_name || 'Unknown Merchant'}</h2>
+                            
+                            <div className="flex flex-wrap gap-2 mb-6">
+                                <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getCategoryColor(viewingReceipt.category).badgeClasses}`}>
+                                    {viewingReceipt.category || 'Uncategorized'}
+                                </span>
+                                <span className="text-sm text-gray-400 flex items-center gap-1.5 px-3 py-1 bg-gray-800 rounded-full border border-gray-700">
+                                    <Calendar size={14} />
+                                    {new Date(viewingReceipt.date_extracted || viewingReceipt.uploaded_at).toLocaleDateString()}
+                                </span>
+                            </div>
+
+                            <div className="bg-gray-800/80 p-5 rounded-xl border border-gray-700 mb-6 flex justify-between items-center shadow-inner">
+                                <span className="text-gray-400 font-medium">Total Amount</span>
+                                <span className="text-3xl font-mono font-bold text-green-400">
+                                    {currencySymbol}{(viewingReceipt.total_amount || 0).toFixed(2)}
+                                </span>
+                            </div>
+                            
+                            {viewingReceipt.tax_amount > 0 && (
+                                <div className="flex justify-between items-center text-sm text-gray-400 mb-6 px-2">
+                                    <span>Tax Amount</span>
+                                    <span className="font-mono">{currencySymbol}{viewingReceipt.tax_amount.toFixed(2)}</span>
+                                </div>
+                            )}
+
+                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <FileText size={18} className="text-blue-400" />
+                                Line Items
+                                <span className="ml-auto text-xs font-normal text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
+                                    {viewingReceipt.items?.length || 0}
+                                </span>
+                            </h3>
+                            
+                            {viewingReceipt.items && viewingReceipt.items.length > 0 ? (
+                                <div className="space-y-2.5">
+                                    {viewingReceipt.items.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-start bg-gray-800/40 p-3.5 rounded-lg border border-gray-800/60 hover:border-gray-700 transition-colors">
+                                            <div className="flex-1 mr-4">
+                                                <p className="text-gray-200 font-medium break-words leading-tight">{item.description || item.item_name}</p>
+                                                {item.quantity && <p className="text-xs text-gray-500 mt-1.5">Qty: {item.quantity}</p>}
+                                            </div>
+                                            <span className="text-gray-300 font-mono font-semibold whitespace-nowrap bg-gray-900/50 px-2 py-1 rounded">
+                                                {currencySymbol}{(item.amount || item.price || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 bg-gray-800/30 rounded-lg border border-gray-800/50 border-dashed">
+                                    <p className="text-gray-500 italic">No items extracted</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </Layout>

@@ -8,10 +8,12 @@ from bson import ObjectId
 
 router = APIRouter()
 
+from typing import Optional
+
 class UserUpdate(BaseModel):
-    full_name: str = None
-    monthly_budget: float = None
-    currency: str = None
+    full_name: Optional[str] = None
+    monthly_budget: Optional[float] = None
+    currency: Optional[str] = None
 
 @router.get("/me")
 async def get_user_profile(current_user: dict = Depends(get_current_user)):

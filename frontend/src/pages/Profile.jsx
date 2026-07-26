@@ -44,12 +44,12 @@ export default function Profile() {
         try {
             await api.put('/users/me', {
                 full_name: profile.full_name,
-                monthly_budget: parseFloat(profile.monthly_budget),
+                monthly_budget: profile.monthly_budget ? parseFloat(profile.monthly_budget) : 0,
                 currency: profile.currency
             });
             updateUser({
                 full_name: profile.full_name,
-                monthly_budget: parseFloat(profile.monthly_budget),
+                monthly_budget: profile.monthly_budget ? parseFloat(profile.monthly_budget) : 0,
                 currency: profile.currency
             });
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
@@ -140,7 +140,7 @@ export default function Profile() {
                                         <input
                                             type="number"
                                             name="monthly_budget"
-                                            value={profile.monthly_budget || 0}
+                                            value={profile.monthly_budget}
                                             onChange={handleChange}
                                             className="w-full bg-gray-900 text-white p-4 pl-12 rounded-xl border border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
                                             placeholder="2000.00"
@@ -155,7 +155,7 @@ export default function Profile() {
                                         <CreditCard size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select
                                             name="currency"
-                                            value={'NPR'}
+                                            value={profile.currency || 'USD'}
                                             onChange={handleChange}
                                             className="w-full bg-gray-900 text-white p-4 pl-12 rounded-xl border border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none appearance-none transition"
                                         >
@@ -164,7 +164,6 @@ export default function Profile() {
                                             <option value="EUR">EUR (€) - Euro</option>
                                             <option value="GBP">GBP (£) - British Pound</option>
                                             <option value="JPY">JPY (¥) - Japanese Yen</option>
-
                                         </select>
                                     </div>
                                 </div>
